@@ -577,214 +577,26 @@ class SubscriptionRepository {
                 user_id: 1
             }
         }
-        ]);
+    ]);
+    
+    console.log("=> data fetched", data.length);
+    
+    return data;
+}
 
-        console.log("=> data fetched", data.length);
+async getPreRenwalSubscriptions(){
+    var date = new Date();
+    let datDate = new Date();
+    // add a day
+    date = date.setDate(date.getDate() + 1);
+    datDate = datDate.setDate(datDate.getDate() + 2)
+    
+    let subs = await Subscription.aggregate([
+        { $match: {  next_billing_timestamp: { $gte: new Date(date), $lte: new Date(datDate) }, subscription_status: {$in: ['billed'] }, auto_renewal: true, subscribed_package_id: { $in: ['QDfG'] } } }
+    ]);
+    return subs;
+}
 
-        return data;
-    }
-
-    async getPreRenwalSubscriptions(){
-        var date = new Date();
-        let datDate = new Date();
-        // add a day
-        date = date.setDate(date.getDate() + 1);
-        datDate = datDate.setDate(datDate.getDate() + 2)
-        
-        let subs = await Subscription.aggregate([
-            { $match: {  next_billing_timestamp: { $gte: new Date(date), $lte: new Date(datDate) }, subscription_status: {$in: ['billed'] }, auto_renewal: true, subscribed_package_id: { $in: ['QDfG'] } } }
-        ]);
-        return subs;
-    }
-
-
-    // API Calls
-    async getUserBySubscriptionId(subscription_id){
-        // let subscription = await this.subscriptionRepo.getSubscription(subscription_id);
-        // let subscriber = await this.subscriberRepo.getSubscriber(subscription.user_id);
-        let user = this.getUserById(subscription_id.user_id);
-        if(user){
-            return user;
-        }
-        return undefined;
-    }
-
-    async getUserByMsisdn(msisdn){
-        return await Axios.get(`${config.user_service}/user/get_user_by_msisdn?msisdn=${msisdn}`)
-        .then(res =>{
-            let result = res.data;
-            console.log("user result", result)
-            return result;
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async getUserById(user_id){
-        return await Axios.get(`${config.user_service}/get_user_by_id?id=${user_id}`)
-        .then(res =>{
-            let result = res.data;
-            return result;
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async subscriberQuery(msisdn){
-        return await Axios.get(`${config.billing_service}/subscriber_query?msisdn=${msisdn}`)
-        .then(res =>{
-            let result = res.data;
-            return result;
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async createUser(userObj){
-        return await Axios.post(`${config.user_service}/create_user`, userObj)
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async updateUser(msisdn, is_gray_listed){
-        return await Axios.post(`${config.user_service}/update_user`, {msisdn, is_gray_listed})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async createBlockUserHistory(msisdn, affiliate_unique_transaction_id, affiliate_mid, response, source){
-        return await Axios.post(`${config.billing_service}/block`, {msisdn, affiliate_unique_transaction_id, affiliate_mid, response, source})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async processDirectBilling(otp, user, subscriptionObj, packageObj, bool){
-        return await Axios.post(`${config.billing_service}/process_direct_billing`, {otp, user, subscriptionObj, packageObj, bool})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async createViewLog(user_id, subscription_id){
-        return await Axios.post(`${config.core_service}/create_view_log`, {user_id, subscription_id})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async createBillingHistory(historyObj){
-        return await Axios.post(`${config.billing_service}/create_billing_history`, historyObj)
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async deleteHistoryForSubscriber(user_id){
-        return await Axios.post(`${config.billing_service}/delete_history_for_subscriber`, {user_id})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async getExpiryHistory(user_id){
-        return await Axios.get(`${config.billing_service}/get_expire_history?user_id=${user_id}`)
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async sendMessageToQueue(message, msisdn){
-        return await Axios.post(`${config.message_service}/message/send-to-queue`, {message, msisdn})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async sendEmail(subject, text, email){
-        return await Axios.post(`${config.message_service}/message/email`, {subject, text, email})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async getPackage(_id){
-        return await Axios.get(`${config.core_service}/package?id=${_id}`)
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async getPaywallsBySlug(slug){
-        return await Axios.get(`${config.core_service}/paywall?slug=${slug}`)
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
-    async getPaywallById(paywall_id){
-        return await Axios.get(`${config.core_service}/paywall?id=${paywall_id}`)
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
 }
 
 module.exports = SubscriptionRepository;

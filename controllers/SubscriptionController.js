@@ -2,6 +2,10 @@ const config = require('../config');
 const container = require('../configurations/container');
 
 const subscriptionRepo = container.resolve("subscriptionRepository");
+const coreRepo = container.resolve("coreRepository");
+const messageRepo = container.resolve("messageRepository");
+const userRepo = container.resolve("userRepository");
+const billingHistoryRepo = container.resolve("billingHistoryRepository");
 
 const shortId = require('shortid');
 const constants = container.resolve("constants");
@@ -14,7 +18,7 @@ exports.getSubscriptionDetails = async(req, res) => {
 	console.log(req.query)
 	let obj = {};
 	if (msisdn) {
-		let user = await subscriptionRepo.getUserByMsisdn(msisdn);
+		let user = await userRepo.getUserByMsisdn(msisdn);
 		console.log("user", user)
 		if(user) {
 			let rawSubscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
@@ -50,7 +54,7 @@ exports.getSubscriptionDetails = async(req, res) => {
 }
 
 getExpiry = async(user_id) => {
-	let rawHistories = await subscriptionRepo.getExpiryHistory(user_id);
+	let rawHistories = await billingHistoryRepo.getExpiryHistory(user_id);
 
 	if(rawHistories.length >= 2){
 		rawHistories.sort(function(a,b){
@@ -76,7 +80,7 @@ getExpiry = async(user_id) => {
 }
 
 login = async(user_id) => {
-	let rawHistories = await subscriptionRepo.getExpiryHistory(user_id);
+	let rawHistories = await billingHistoryRepo.getExpiryHistory(user_id);
 
 	if(rawHistories.length >= 2){
 		rawHistories.sort(function(a,b){
@@ -145,7 +149,7 @@ exports.subscribe = async (req, res) => {
 	
 		let msisdn = decodedUser.msisdn;
 		console.log("Decoded Msisdn: ", msisdn);
-		let user = await subscriptionRepo.getUserByMsisdn(msisdn);
+		let user = await userRepo.getUserByMsisdn(msisdn);
 		if(!user){
 			// Means no user in DB, let's create one
 			let userObj = {}, response = {};
@@ -157,7 +161,7 @@ exports.subscribe = async (req, res) => {
 				response.operator = "easypaisa";
 			}else{
 				try{
-					response = await subscriptionRepo.subscriberQuery(msisdn);
+					response = await coreRepo.subscriberQuery(msisdn);
 					console.log("SUBSCRIBER QUERY RESPONSE - SUBSCRIBE", response);
 				}catch(err){
 					console.log("SUBSCRIBER QUERY ERROR - SUBSCRIBE", err);
@@ -168,7 +172,7 @@ exports.subscribe = async (req, res) => {
 			if(response && (response.operator === "telenor" || response.operator === "easypaisa")){
 				try {
 					userObj.operator = response.operator;
-					user = await subscriptionRepo.createUser(userObj);
+					user = await userRepo.createUser(userObj);
 					console.log('Payment - Subscriber - UserCreated - ', response.operator, ' - ', msisdn, ' - ', user.source, ' - ', (new Date()));
 	
 					if(user && user.is_black_listed){
@@ -181,7 +185,7 @@ exports.subscribe = async (req, res) => {
 					res.send({code: config.codes.code_error, message: 'Failed to subscriber user', gw_transaction_id: gw_transaction_id})
 				}
 			}else{
-				subscriptionRepo.createBlockUserHistory(msisdn, req.body.affiliate_unique_transaction_id, req.body.affiliate_mid, response ? response.api_response : "no response", req.body.source);
+				billingHistoryRepo.createBlockUserHistory(msisdn, req.body.affiliate_unique_transaction_id, req.body.affiliate_mid, response ? response.api_response : "no response", req.body.source);
 				res.send({code: config.codes.code_error, message: "Not a valid Telenor number.", gw_transaction_id: gw_transaction_id });
 			}
 		}else{
@@ -218,7 +222,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 		*/
 		
 		let newPackageId = req.body.package_id;
-		let packageObj = await subscriptionRepo.getPackage({_id: newPackageId});
+		let packageObj = await coreRepo.getPackage({_id: newPackageId});
 		if (packageObj) {
 			let subscription = await subscriptionRepo.getSubscriptionByPaywallId(user._id, packageObj.paywall_id);
 			if(!subscription){
@@ -271,7 +275,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						// No micro charge for daily affiliate subscriptions
 						if(packageObj._id === 'QDfC' && (req.body.affiliate_mid === 'gdn' || req.body.affiliate_mid === 'gdn1' || req.body.affiliate_mid === 'gdn2' || req.body.affiliate_mid === 'gdn3')){
 							try {
-								let result = await subscriptionRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
+								let result = await billingHistoryRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
 									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
@@ -289,7 +293,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 							}
 						}else if (req.body.affiliate_mid === '1569' || req.body.affiliate_mid === 'aff3a' || req.body.affiliate_mid === 'aff3' || req.body.affiliate_mid === 'goonj' || req.body.affiliate_mid === 'tp-gdn'){
 							try {
-								let result = await subscriptionRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
+								let result = await billingHistoryRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
 									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
@@ -320,7 +324,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								res.send({code: config.codes.code_error, message: 'Failed to subscribe package' + (subsResponse.desc ? ', possible cause: '+subsResponse.desc : ''), package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
 							}
 							subscriptionObj = subsResponse.subscriptionObj;
-							packageObj = await subscriptionRepo.getPackage({_id: subscriptionObj.subscribed_package_id});
+							packageObj = await coreRepo.getPackage({_id: subscriptionObj.subscribed_package_id});
 						}
 					}catch(err){
 						console.log("=> ", err);
@@ -331,7 +335,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 				}else{
 					// comedy paywall
 					try {
-						let result = await subscriptionRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
+						let result = await billingHistoryRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 						console.log("Direct Billing processed",result,user.msisdn);
 						if(result.message === "success"){
 							// subscription = await subscriptionRepo.createSubscription(subscriptionObj);
@@ -366,7 +370,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					text = text.replace("%user_id%",subscriptionObj.user_id);
 					text = text.replace("%pkg_id%",packageObj._id);
 					console.log("Subscription Message Text",text,user.msisdn);
-					subscriptionRepo.sendMessageToQueue(text, user.msisdn);
+					messageRepo.sendMessageToQueue(text, user.msisdn);
 				} else if(sendChargingMessage === true) {
 					let trial_hours = packageObj.trial_hours;
 					let message = constants.subscription_messages_direct[packageObj._id];
@@ -379,14 +383,14 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					console.log("Messages",message, user.msisdn);
 				
 					console.log("Subscription Message Text", message, user.msisdn);
-					subscriptionRepo.sendMessageToQueue(message, user.msisdn);
+					messageRepo.sendMessageToQueue(message, user.msisdn);
 				}else {
 					console.log("Not sending message",user.msisdn);
 				}
 			}else {
 				if(subscription.active === true){
 					// Pass subscription through following checks before pushing into queue
-					await subscriptionRepo.createViewLog(user._id, subscription._id);
+					await coreRepo.createViewLog(user._id, subscription._id);
 					let currentPackageId = subscription.subscribed_package_id;
 					let autoRenewal = subscription.auto_renewal;
 
@@ -407,7 +411,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								if(autoRenewal === true){
 									// Already subscribed, no need to subscribed package again
 									history.billing_status = "subscription-request-received-for-the-same-package";
-									await subscriptionRepo.createBillingHistory(history);
+									await billingHistoryRepo.createBillingHistory(history);
 									res.send({code: config.codes.code_already_subscribed, message: 'Already subscribed', gw_transaction_id: gw_transaction_id});
 								}else{
 									// Same package - just switch on auto renewal so that the user can get charge automatically.
@@ -415,7 +419,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									if(updated){
 										history.billing_status = "subscription-request-received-after-unsub";
 										
-										await subscriptionRepo.createBillingHistory(history);
+										await billingHistoryRepo.createBillingHistory(history);
 										res.send({code: config.codes.code_already_subscribed, message: 'Subscribed again after unsub', gw_transaction_id: gw_transaction_id});
 									}else{
 										res.send({code: config.codes.code_error, message: 'Error updating record!', gw_transaction_id: gw_transaction_id});
@@ -435,7 +439,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									if(subscription.last_subscription_status && subscription.last_subscription_status === "trial"){
 										try {
 											subscription.payment_source = req.body.payment_source;
-											let result = await subscriptionRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
+											let result = await billingHistoryRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 											console.log("result",result,user.msisdn);
 											if(result.message === "success"){
 												res.send({code: config.codes.code_success, message: 'Subscribed Successfully', gw_transaction_id: gw_transaction_id});
@@ -460,7 +464,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								}else{
 									try {
 										subscription.payment_source = req.body.payment_source;
-										let result = await subscriptionRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
+										let result = await billingHistoryRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 										console.log("result direct billing - ",result,user.msisdn);
 										if(result.message === "success"){
 											res.send({code: config.codes.code_success, message: 'Subscribed Successfully', gw_transaction_id: gw_transaction_id});
@@ -476,13 +480,13 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						}else{
 								// request is coming for the same paywall but different package
 								if (subscription.subscription_status === "billed"){
-									let newPackageObj = await subscriptionRepo.getPackage({_id: newPackageId});
-									let currentPackageObj = await subscriptionRepo.getPackage({_id: currentPackageId});
+									let newPackageObj = await coreRepo.getPackage({_id: newPackageId});
+									let currentPackageObj = await coreRepo.getPackage({_id: currentPackageId});
 
 									if(newPackageObj.package_duration > currentPackageObj.package_duration){
 										// It means switching from daily to weekly, process billing
 										try {
-											let result = await subscriptionRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
+											let result = await billingHistoryRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 											if(result && result.message === "success"){
 												res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
 											}else{
@@ -500,20 +504,20 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										history.paywall_id = packageObj.paywall_id;
 										history.package_id = newPackageId;
 										history.billing_status = "package_change_upon_user_request";
-										await subscriptionRepo.createBillingHistory(history);
+										await billingHistoryRepo.createBillingHistory(history);
 										let message = constants.message_on_weekly_to_daily_switch.message;
 										let text = message;
 										text = text.replace("%pkg_id%",packageObj._id);
 										text = text.replace("%user_id%",user._id);
 										text = text.replace("%current_date%", nextBillingDate);
 										text = text.replace("%next_date%", nextBillingDate);
-										subscriptionRepo.sendMessageToQueue(text, user.msisdn);
+										messageRepo.sendMessageToQueue(text, user.msisdn);
 										console.log("text", text);
 										res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
 									}
 								} else if (subscription.subscription_status === "graced" || subscription.subscription_status === "expired" || subscription.subscription_status === "trial" ) {
 								try {
-									let result = await subscriptionRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
+									let result = await billingHistoryRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 									if(result.message === "success"){
 										res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
 									}else{
@@ -553,7 +557,7 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	let billingHistory = {};
 	if(subscriptionObj.payment_source === "easypaisa"){
 		packageObj.price_point_pkr = 1;
-		let response = await subscriptionRepo.processDirectBilling(otp, user, subscriptionObj, packageObj, true);
+		let response = await billingHistoryRepo.processDirectBilling(otp, user, subscriptionObj, packageObj, true);
 		if(response.success){
 			billingHistory.transaction_id = response.api_response.response.orderId;
 			billingHistory.operator_response = response.api_response;
@@ -585,8 +589,8 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	billingHistory.billing_status = 'trial';
 	billingHistory.source = source;
 	billingHistory.operator = subscriptionObj.payment_source;
-	await subscriptionRepo.createBillingHistory(billingHistory);
-	await subscriptionRepo.createViewLog(user._id, subscription._id);
+	await billingHistoryRepo.createBillingHistory(billingHistory);
+	await coreRepo.createViewLog(user._id, subscription._id);
 
 	return "done";
 }
@@ -603,7 +607,7 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 			}
 			subscriptionObj.subscribed_package_id = packageObj._id;
 
-			let result = await subscriptionRepo.processDirectBilling(subscriptionObj.ep_token ? undefined : otp, user, subscriptionObj, packageObj, true);
+			let result = await billingHistoryRepo.processDirectBilling(subscriptionObj.ep_token ? undefined : otp, user, subscriptionObj, packageObj, true);
 			console.log("Direct billing processed with status ", result.message);
 			if(result.message === "success"){
 				dataToReturn.status = "charged";
@@ -687,7 +691,7 @@ reSubscribe = async(subscription, history) => {
 	let update = await subscriptionRepo.updateSubscription(subscription._id, dataToUpdate);
 	if(update){
 		history.billing_status = "subscription-request-received-for-the-same-package-after-unsub";
-		await subscriptionRepo.createBillingHistory(history);
+		await billingHistoryRepo.createBillingHistory(history);
 	}
 }
 
@@ -705,9 +709,9 @@ exports.recharge = async (req, res) => {
 	
 	let user;
 	if(user_id){
-		user = await subscriptionRepo.getUserById(user_id);
+		user = await userRepo.getUserById(user_id);
 	}else if(msisdn){
-		user = await subscriptionRepo.getUserByMsisdn(msisdn);
+		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 
 	if(user){
@@ -719,10 +723,10 @@ exports.recharge = async (req, res) => {
 				res.send({code: config.codes.code_in_billing_queue, message: 'Already in billing process!', gw_transaction_id: gw_transaction_id});
 			}else{
 				// try charge attempt
-				let packageObj = await subscriptionRepo.getPackage({_id: package_id});
+				let packageObj = await coreRepo.getPackage({_id: package_id});
 				if(packageObj){
 					await subscriptionRepo.updateSubscription(subscription._id, {consecutive_successive_bill_counts: 0, is_manual_recharge: true});
-					let result = await subscriptionRepo.processDirectBilling(undefined, user, subscription, packageObj, true);
+					let result = await billingHistoryRepo.processDirectBilling(undefined, user, subscription, packageObj, true);
 					if(result.message === "success"){
 						res.send({code: config.codes.code_success, message: 'Recharged successfully', gw_transaction_id: gw_transaction_id});
 					}else {
@@ -751,9 +755,9 @@ exports.status = async (req, res) => {
 	}
 
 	if (user_id){
-		user = await subscriptionRepo.getUserById(user_id);
+		user = await userRepo.getUserById(user_id);
 	} else {
-		user = await subscriptionRepo.getUserByMsisdn(msisdn);
+		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 
 	if(user){
@@ -765,7 +769,7 @@ exports.status = async (req, res) => {
 			}
 			
 			if(result){
-				await subscriptionRepo.createViewLog(user._id, result._id);
+				await coreRepo.createViewLog(user._id, result._id);
 				res.send({code: config.codes.code_success, 
 					subscribed_package_id: result.subscribed_package_id, 
 					data: {
@@ -796,7 +800,7 @@ exports.status = async (req, res) => {
 exports.getAllSubscriptions = async (req, res) => {
 	let gw_transaction_id = req.query.transaction_id;
 	let msisdn = req.query.msisdn;
-	let user = await subscriptionRepo.getUserByMsisdn(msisdn);
+	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
 		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
 		// if(subscriber){
@@ -834,12 +838,12 @@ exports.getAllSubscriptions = async (req, res) => {
 
 exports.delete = async (req, res) => {
 	let msisdn = req.query.msisdn;
-	let user = await subscriptionRepo.getUserByMsisdn(msisdn);
+	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
 		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
 		// if(subscriber){
 			await subscriptionRepo.deleteAllSubscriptions(user._id);
-			await subscriptionRepo.deleteHistoryForSubscriber(user._id);
+			await billingHistoryRepo.deleteHistoryForSubscriber(user._id);
 			res.send({code: config.codes.code_success, message: 'Done'});
 		// }else{
 		// 	res.send({code: config.codes.code_success, message: 'No subscriber found'});
@@ -861,9 +865,9 @@ exports.unsubscribe = async (req, res) => {
 	let package_id = req.body.package_id;
 
 	if (user_id) {
-		user = await subscriptionRepo.getUserById(user_id);
+		user = await userRepo.getUserById(user_id);
 	}else if(msisdn){
-		user = await subscriptionRepo.getUserByMsisdn(msisdn);
+		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 	
 	if(user){
@@ -884,7 +888,7 @@ exports.unsubscribe = async (req, res) => {
 				for(let i = 0; i < subscriptions.length; i++){
 					let subscription = subscriptions[i];
 
-					let packageObj = await subscriptionRepo.getPackage({_id: subscription.subscribed_package_id});
+					let packageObj = await coreRepo.getPackage({_id: subscription.subscribed_package_id});
 					let result = await subscriptionRepo.updateSubscription(subscription._id, 
 					{
 						auto_renewal: false, 
@@ -909,14 +913,14 @@ exports.unsubscribe = async (req, res) => {
 					history.billing_status = 'unsubscribe-request-received-and-expired';
 					history.source = source ? source : "na";
 					history.operator = user.operator;
-					result = await subscriptionRepo.createBillingHistory(history);
+					result = await billingHistoryRepo.createBillingHistory(history);
 	
 					if(result){
 						if(subscription.marketing_source && subscription.marketing_source !== 'none'){
 							
 							// This user registered from a marketer, let's put this user in gray list
 							result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
-							result = await subscriptionRepo.updateUser(msisdn, {is_gray_listed: true});
+							result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
 							if(result){
 								unSubCount += 1;
 							}
@@ -935,7 +939,7 @@ exports.unsubscribe = async (req, res) => {
 					else if(package_id == 'QDfC'){
 						smsText = `Moaziz saarif, ap ki Goonj Daily ki service khatam kar de gae hai. Dobara Rs.5+tax/day subscribe krny k liye link per click karain https://www.goonj.pk`
 					}
-					subscriptionRepo.sendMessageToQueue(smsText,user.msisdn);
+					messageRepo.sendMessageToQueue(smsText,user.msisdn);
 
 					res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
 				}else{
@@ -962,9 +966,9 @@ exports.expire = async (req, res) => {
 		package_id = config.default_package_id;
 	}
 
-	let user = await subscriptionRepo.getUserByMsisdn(msisdn);
+	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
-		let packageObj = await subscriptionRepo.getPackage({_id: package_id});
+		let packageObj = await coreRepo.getPackage({_id: package_id});
 		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
 		let subscription = await subscriptionRepo.getSubscriptionByPackageId(user._id. package_id);
 		await subscription.updateSubscription(subscription._id, {auto_renewal: false, subscription_status: 'expired', consecutive_successive_bill_counts: 0});
@@ -979,7 +983,7 @@ exports.expire = async (req, res) => {
 		history.billing_status = 'expired';
 		history.source = source ? source : "na";
 		history.operator = user.operator;
-		await subscriptionRepo.createBillingHistory(history);
+		await billingHistoryRepo.createBillingHistory(history);
 		
 		
 		

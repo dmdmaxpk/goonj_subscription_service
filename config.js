@@ -28,6 +28,9 @@ const codes = {
 const subscriber_query = 'http://localhost:3005';
 const user_service = 'http://localhost:3007';
 const billing_service = 'http://localhost:3008';
+const tp_ep_core = 'http://localhost:3008';
+const message_service = 'http://localhost:3008';
+const core_service = 'http://localhost:3008';
 
 
 const default_package_id = "QDfC";
@@ -46,6 +49,9 @@ let config = {
         user_service: user_service,
         subscriber_query: subscriber_query,
         billing_service: billing_service,
+        tp_ep_core: tp_ep_core,
+        message_service: message_service,
+        core_service: core_service
     },
     staging: {
         port: 3004,
@@ -57,6 +63,9 @@ let config = {
         user_service: user_service,
         subscriber_query: subscriber_query,
         billing_service: billing_service,
+        tp_ep_core: tp_ep_core,
+        message_service: message_service,
+        core_service: core_service
     },
     production: {
         port: process.env.PW_PORT,
@@ -68,6 +77,9 @@ let config = {
         user_service: user_service,
         subscriber_query: subscriber_query,
         billing_service: billing_service,
+        tp_ep_core: tp_ep_core,
+        message_service: message_service,
+        core_service: core_service
     }
 };
 
