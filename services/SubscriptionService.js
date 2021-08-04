@@ -1,13 +1,17 @@
 const config = require("../config");
 
 class SubscriptionService {
-    constructor({subscriptionRepository}) {
+    constructor({subscriptionRepository, userRepository, coreRepository, billingHistoryRepository, messageRepository}) {
         this.subscriptionRepository = subscriptionRepository;
+        this.userRepository = userRepository;
+        this.coreRepository = coreRepository;
+        this.billingHistoryRepository = billingHistoryRepository;
+        this.messageRepository = messageRepository;
     }
 
     async expireByNumber(msisdn, slug, source){
         try{
-            let user  = await this.subscriptionRepository.getUserByMsisdn(msisdn);
+            let user  = await this.userRepository.getUserByMsisdn(msisdn);
             let subscriptionsToUnsubscribe = [];
             
             if(user){
@@ -25,7 +29,7 @@ class SubscriptionService {
                             }
                         }
                     }else if(slug && (slug === "live" || slug === "comedy")){
-                        let paywall  = await this.subscriptionRepository.getPaywallsBySlug(slug);
+                        let paywall  = await this.coreRepository.getPaywallsBySlug(slug);
                         for (let i =0 ; i < subscriptions.length; i++) {
                             let subscription = subscriptions[i];
                             if (paywall.package_ids.indexOf(subscription.subscribed_package_id) > -1){
@@ -41,7 +45,7 @@ class SubscriptionService {
                         let unsubscribed = 0;
                         for (let i =0 ; i < subscriptionsToUnsubscribe.length; i++) {
                             let subscription = subscriptions[i];
-                            let paywall  = await this.subscriptionRepository.getPaywallById(subscription.paywall_id);
+                            let paywall  = await this.coreRepository.getPaywallById(subscription.paywall_id);
 
                             let history = {};
                             history.user_id = subscriber.user_id;
@@ -122,8 +126,8 @@ class SubscriptionService {
         return new Promise(async (resolve,reject) => {
             try {
                 if (msisdn && paywall_slug){
-                   let user  = await this.subscriptionRepository.getUserByMsisdn(msisdn);
-                   let paywall  = await this.subscriptionRepository.getPaywallsBySlug(paywall_slug);
+                   let user  = await this.userRepository.getUserByMsisdn(msisdn);
+                   let paywall  = await this.coreRepository.getPaywallsBySlug(paywall_slug);
                    if (user && paywall ) {
                         // let subscriber = await this.subscriberRepository.getSubscriberByUserId(user._id);
                         // if (subscriber) {
@@ -187,11 +191,11 @@ class SubscriptionService {
                     });
                     // add to history
                     
-                    await this.subscriptionRepository.createBillingHistory(history);
+                    await this.billingHistoryRepository.createBillingHistory(history);
         
                     // send sms to user
                     let text = `Apki Goonj TV per Live TV Weekly ki subscription khatm kr di gai ha. Phr se subscribe krne k lye link par click karen https://www.goonj.pk/ `;
-                    this.subscriptionRepository.sendMessageToQueue(text,msisdn);
+                    this.messageRepository.sendMessageToQueue(text,msisdn);
                     resolve("Succesfully unsubscribed");
                 } else {
                     resolve("Subscription id not found");

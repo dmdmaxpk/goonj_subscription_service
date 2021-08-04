@@ -7,8 +7,10 @@ const  _ = require('lodash');
 
 class SubscriptionConsumer {
 
-    constructor({subscriptionRepository,constants}) {
+    constructor({subscriptionRepository, billingHistoryRepository, messageRepository, constants}) {
         this.subscriptionRepo = subscriptionRepository;
+        this.billingHistoryRepo = billingHistoryRepository;
+        this.messageRepo = messageRepository;
         this.constants = constants;
 
     }
@@ -154,7 +156,7 @@ class SubscriptionConsumer {
             //Send acknowldement to user
             // let link = 'https://www.goonj.pk/goonjplus/open';
             // let message = "You've been awarded a grace period of "+packageObj.streamable_grace_hours+" hours. Click below link to open Goonj.\n"+link
-            // this.subscriptionRepo.sendMessageToQueue(message, user.msisdn);
+            // this.messageRepo.sendMessageToQueue(message, user.msisdn);
 
         }else if(subscription.subscription_status === 'graced' && subscription.auto_renewal === true){
             // Already in grace, check if given time has been passed in grace, stop streaming
@@ -166,7 +168,7 @@ class SubscriptionConsumer {
     
             if (is_manual_recharge){
                 let message = "You have insufficient amount for Goonj TV subscription. Please recharge your account for watching Live channels on Goonj TV. Stay Safe";
-                this.subscriptionRepo.sendMessageToQueue(message, user.msisdn);
+                this.messageRepo.sendMessageToQueue(message, user.msisdn);
             }
     
             if (hoursSpentInGracePeriod > packageObj.grace_hours){
@@ -184,7 +186,7 @@ class SubscriptionConsumer {
                 //Send acknowledgement to user
                 let link = 'https://www.goonj.pk/goonjplus/subscribe';
                 let message = 'You package to Goonj TV has expired, click below link to subscribe again.\n'+link;
-                this.subscriptionRepo.sendMessageToQueue(message, user.msisdn);
+                this.messageRepo.sendMessageToQueue(message, user.msisdn);
                 historyStatus = "expired";
 
             }else if(packageObj.is_micro_charge_allowed === true && hoursSpentInGracePeriod > 8 && hoursSpentInGracePeriod <= 24){
@@ -229,7 +231,7 @@ class SubscriptionConsumer {
             
             //Send acknowledgement to user
             let message = 'You have insufficient balance for Goonj TV, please try again after recharge. Thanks';
-            this.subscriptionRepo.sendMessageToQueue(message, user.msisdn);
+            this.messageRepo.sendMessageToQueue(message, user.msisdn);
         }
 
         if(subscriptionObj.try_micro_charge_in_next_cycle === false) {
@@ -330,7 +332,7 @@ class SubscriptionConsumer {
     
     async addHistory(history) {
         console.time("[timeLog][addHistory]")
-        await this.subscriptionRepo.createBillingHistory(history);
+        await this.billingHistoryRepo.createBillingHistory(history);
         console.timeEnd("[timeLog][addHistory]")
     }
 
@@ -345,7 +347,7 @@ class SubscriptionConsumer {
             let emailSubject = `User Billing Exceeded`;
             let emailText = `Subscription id ${subscription_id} has exceeded its billing limit. Please check on priority.`;
             let emailToSend = `paywall@dmdmax.com.pk`;
-            this.subscriptionRepo.sendEmail(emailSubject,emailText,emailToSend);
+            this.messageRepo.sendEmail(emailSubject,emailText,emailToSend);
             console.log('Excessive billing email initiated for subscription id ',subscription_id);
         } catch(err){
             console.error(err);
@@ -415,20 +417,20 @@ class SubscriptionConsumer {
             let message = this.constants.message_after_first_successful_charge[package_id];
             message = message.replace("%user_id%", user_id)
             message = message.replace("%pkg_id%", package_id)
-            this.subscriptionRepo.sendMessageToQueue(message, msisdn);
+            this.messageRepo.sendMessageToQueue(message, msisdn);
         }else if(subscription.consecutive_successive_bill_counts % 7 === 0){
             // Every week
             //Send acknowledgement to user
             if (is_manual_recharge){
                 let message = `You have been successfully subscribed for Goonj TV.Rs.${price} has been deducted from your credit. Stay safe and keep watching Goonj TV`;
-                this.subscriptionRepo.sendMessageToQueue(message, msisdn);
+                this.messageRepo.sendMessageToQueue(message, msisdn);
             } else {
                 let unsubLink = `https://www.goonj.pk/unsubscribe?proxy=${user_id}&amp;pg=${package_id}`;
                 let message = this.constants.message_after_repeated_succes_charge[package_id];
                 message = message.replace("%price%",price);
                 message= message.replace("%user_id%",user_id)
                 message= message.replace("%pkg_id%",package_id)
-                this.subscriptionRepo.sendMessageToQueue(message, msisdn);
+                this.messageRepo.sendMessageToQueue(message, msisdn);
             }
         }
     }
@@ -440,7 +442,7 @@ class SubscriptionConsumer {
     
         //Send acknowldement to user
         let message = "You've got "+percentage+"% discount on "+packageName+".  Numainday se baat k liye 727200 milayein.";
-        this.subscriptionRepo.sendMessageToQueue(message, msisdn);
+        this.messageRepo.sendMessageToQueue(message, msisdn);
     }
 }
 

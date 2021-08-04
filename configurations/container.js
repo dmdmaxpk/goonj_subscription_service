@@ -6,6 +6,10 @@ const container = awilix.createContainer({
 const SubscriberQueryConsumer = require("../rabbit/consumers/SubscriptionConsumer");
 // Repositories
 const SubscriptionRepository = require('../repos/SubscriptionRepo');
+const BillingHistoryRepo = require('../repos/BillingHistoryRepo');
+const CoreRepo = require('../repos/CoreRepo');
+const MessageRepo = require('../repos/MessageRepo');
+const UserRepo = require('../repos/UserRepo');
 
 // Services
 const SubscriptionService = require('../services/SubscriptionService');
@@ -19,6 +23,10 @@ container.register({
     subscriptionConsumer: awilix.asClass(SubscriberQueryConsumer).singleton(),
     // Repositories 
     subscriptionRepository: awilix.asClass(SubscriptionRepository).singleton(),
+    billingHistoryRepository: awilix.asClass(BillingHistoryRepo).singleton(),
+    coreRepository: awilix.asClass(CoreRepo).singleton(),
+    messageRepository: awilix.asClass(MessageRepo).singleton(),
+    userRepository: awilix.asClass(UserRepo).singleton(),
 
     //SErvices
     subscriptionService : awilix.asClass(SubscriptionService).singleton(),
