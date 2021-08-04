@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Service Label
-router.get('/', (req, res) => res.send("Subscription Microservice"));
+router.get('/', (req, res) => res.send("Subscription Service Running"));
 
 // Payment routes
 router.use('/subscription',    require('./subscriptionRoute'));

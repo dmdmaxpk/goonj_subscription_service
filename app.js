@@ -1,31 +1,52 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const mongoSanitize = require('express-mongo-sanitize');
 const mongoose = require('mongoose');
+const config = require('./config');
+
+const app = express();
 
 // Import database models
 require('./models/Subscription');
 
-const config = require('./config');
-
-
 // Connection to Database
-mongoose.connect(config.mongoDB, {useUnifiedTopology: true, useCreateIndex: true, useNewUrlParser: true});
+mongoose.connect(config.mongo_connection_url, {useUnifiedTopology: true, useCreateIndex: true, useNewUrlParser: true});
 mongoose.connection.on('error', err => console.error(`Error: ${err.message}`));
-
-
-const app = express();
 
 // Middlewares
 app.use(bodyParser.json({limit: '5120kb'}));  //5MB
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(mongoSanitize());
 
 // Import routes
 app.use('/', require('./routes/index'));
 
+const RabbitMq = require('./rabbit/RabbitMq');
+const rabbitMq = new RabbitMq().getInstance();
+
+const SubscriptionConsumer = require('./rabbit/consumers/SubscriptionConsumer');
+const subscriptionConsumer = new SubscriptionConsumer()
+
 // Start Server
 let { port } = config;
 app.listen(port, () => {
-    console.log(`APP running on port ${port}`);
+    console.log(`Subscription Service Running On Port ${port}`);
+    rabbitMq.initServer((error, response) => {
+        if(error){
+            console.error(error)
+        }else{
+            console.log('RabbitMq status', response);
+            try{
+                // create queues
+                rabbitMq.createQueue(config.queueNames.subscriptionDispatcher);
+                rabbitMq.createQueue(config.queueNames.billingHistoryDispatcher);
+
+                // consume
+                rabbitMq.consumeQueue(config.queueNames.subscriptionDispatcher, (message) => {
+                    await subscriptionConsumer.consume(JSON.parse(message.content))
+                    rabbitMq.acknowledge(message);
+                });
+            }catch(error){
+                console.error(error.message);
+            }
+        }
+    });
 });
