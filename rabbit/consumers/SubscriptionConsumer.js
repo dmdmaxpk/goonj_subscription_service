@@ -1,8 +1,8 @@
-const config = require('../../../config');
+const config = require('../../config');
 const moment = require('moment');
 const axios = require("axios");
 const { response } = require('express');
-const helper = require('../../../helper/helper');
+const helper = require('../../helper/helper');
 const  _ = require('lodash');
 
 class SubscriptionConsumer {
@@ -13,9 +13,7 @@ class SubscriptionConsumer {
 
     }
 
-    async consume(message) {
-        let messageObject = JSON.parse(message.content);
-
+    async consume(messageObject) {
         let user = messageObject.user;
         let mPackage = messageObject.package;
         let subscription = messageObject.subscription;

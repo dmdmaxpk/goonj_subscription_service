@@ -3,7 +3,7 @@ const container = awilix.createContainer({
     injectionMode: awilix.InjectionMode.PROXY
 });
 // Queue Consumers
-const SubscriberQueryConsumer = require("../repos/queue/consumers/SubscriptionConsumer");
+const SubscriberQueryConsumer = require("../rabbit/consumers/SubscriptionConsumer");
 // Repositories
 const SubscriptionRepository = require('../repos/SubscriptionRepo');
 

@@ -1,4 +1,4 @@
-const env = process.env.NODE_ENV || 'development';
+const env = process.env.NODE_ENV || 'production';
 
 const codes = {
     code_error: -1,
@@ -24,50 +24,43 @@ const codes = {
     code_otp_not_found: 17
 }
 
-// Micro Service URLs
-const subscriber_query = 'http://localhost:3005';
-const user_service = 'http://localhost:3007';
-const billing_service = 'http://localhost:3008';
-
-
-const default_package_id = "QDfC";
-const queueNames = {
-    // producers
-    subscriptionDispatcher: 'subscriptionDispatcher',
+const servicesUrls = {
+    user_service: 'http://localhost:3007',
+    tp_ep_core_service: 'http://localhost:3002',
+    billing_history_service: 'http://localhost:3008'
 }
+const rabbitMqConnectionString = 'amqp://127.0.0.1';
+const db_name = 'goonjpaywall';
+
+const queueNames = {
+    subscriptionDispatcher: 'subscriptionDispatcher',
+    billingHistoryDispather: 'billingHistoryDispather'
+}
+
 let config = {
     development: {
         port: 3004,
-        mongoDB: 'mongodb://localhost:27017/goonjpaywall',
-        rabbitMq: 'amqp://127.0.0.1',
+        mongo_connection_url: `mongodb://localhost:27017/${db_name}`,
         queueNames: queueNames,
         codes: codes,
-        default_package_id: default_package_id,
-        user_service: user_service,
-        subscriber_query: subscriber_query,
-        billing_service: billing_service,
+        servicesUrls: servicesUrls,
+        rabbitMqConnectionString: rabbitMqConnectionString
     },
     staging: {
         port: 3004,
-        mongoDB: 'mongodb://localhost:27017/goonjpaywall',
-        rabbitMq: 'amqp://127.0.0.1',
+        mongo_connection_url: `mongodb://localhost:27017/${db_name}`,
         queueNames: queueNames,
         codes: codes,
-        default_package_id: default_package_id,
-        user_service: user_service,
-        subscriber_query: subscriber_query,
-        billing_service: billing_service,
+        servicesUrls: servicesUrls,
+        rabbitMqConnectionString: rabbitMqConnectionString
     },
     production: {
-        port: process.env.PW_PORT,
-        mongoDB: process.env.PW_MONGO_DB_URL,
-        rabbitMq: process.env.PW_RABBIT_MQ,
+        port: 3004,
+        mongo_connection_url: `mongodb://localhost:27017/${db_name}`,
         queueNames: queueNames,
         codes: codes,
-        default_package_id: default_package_id,
-        user_service: user_service,
-        subscriber_query: subscriber_query,
-        billing_service: billing_service,
+        servicesUrls: servicesUrls,
+        rabbitMqConnectionString: rabbitMqConnectionString
     }
 };
 

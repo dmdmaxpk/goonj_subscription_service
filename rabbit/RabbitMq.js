@@ -1,7 +1,5 @@
-const   config = require('../../config');
+const config = require('../config');
 const amqp = require('amqplib/callback_api');
-
-var rabbitMq;
 
 class RabbitMq {
     constructor() {
@@ -9,8 +7,28 @@ class RabbitMq {
         this.channel = null;
     }
 
+    initServer(callback) {
+        this.createConnection((err, connection) => {
+            if (err) {
+                console.log('Error while connection to RabbitMq: ', err);
+                callback(err);
+            } else {
+                this.connection = connection;
+                this.createChannel(connection, (error, channel) => {
+                    if (error) {
+                        console.log('Error while creating RabbitMq channel', error);
+                        callback(error);
+                    } else {
+                        this.channel = channel;
+                        callback(null, 'connected');
+                    }
+                });
+            }
+        });
+    }
+
     createConnection(callback){
-        amqp.connect(config.rabbitMq, (error, connection) => {
+        amqp.connect(config.rabbitMqConnectionString, (error, connection) => {
             if (error) {
                 console.log('connection error: ', error);
                 callback(error);
@@ -30,34 +48,12 @@ class RabbitMq {
         });
     }
 
-    initializeMessageServer(callback) {
-        this.createConnection((err,connection) => {
-            if (err) {
-                console.log('connection error: ', err);
-                callback(err);
-            } else {
-                this.createChannel(connection, (error, channel) => {
-                    if (error) {
-                        console.log('error', error);
-                        callback(error);
-                    } else {
-                        this.conection = connection;
-                        this.channel = channel;
-                        callback(null, channel);
-                    }
-                });
-            }
-        });
-    }
-
     createQueue(name, durable = true){
         this.channel.assertQueue(name, {durable: durable});
     }
 
     consumeQueue(queue, callback){
         this.channel.consume(queue, async (msg) =>  {
-
-            //console.log('consumeQueue -> msg: ', msg);
             callback(msg);
           }, {
             //It's time to turn manual acnkowledgments on using the {noAck: false} option and send a 
@@ -78,12 +74,18 @@ class RabbitMq {
         let buffer = Buffer.from(JSON.stringify(message));
         this.channel.sendToQueue(queue, buffer, {persistent:true});
     }
-}    
-  
-if(!rabbitMq){
-    rabbitMq = new RabbitMq();
-}
+}  
 
-module.exports = {
-    rabbitMq: rabbitMq
-};
+class Singleton {
+    constructor() {
+        if (!Singleton.instance) {
+            Singleton.instance = new RabbitMq();
+        }
+    }
+  
+    getInstance() {
+        return Singleton.instance;
+    }
+  }
+
+module.exports = Singleton;
