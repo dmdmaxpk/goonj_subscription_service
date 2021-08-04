@@ -13,17 +13,6 @@ class BillingHistoryRepository {
         })
     }
 
-    async processDirectBilling(otp, user, subscriptionObj, packageObj, bool){
-        return await Axios.post(`${config.billing_service}/process_direct_billing`, {otp, user, subscriptionObj, packageObj, bool})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
-
 
     async createBillingHistory(historyObj){
         return await Axios.post(`${config.billing_service}/create_billing_history`, historyObj)

@@ -45,19 +45,6 @@ class CoreRepository{
             return err
         })
     }
-
-
-    // tp-ep core
-    async subscriberQuery(msisdn){
-        return await Axios.get(`${config.tp_ep_core_service}/subscriber_query?msisdn=${msisdn}`)
-        .then(res =>{
-            let result = res.data;
-            return result;
-            })
-            .catch(err =>{
-                return err
-            })
-    }
 }
 
 module.exports = CoreRepository;
