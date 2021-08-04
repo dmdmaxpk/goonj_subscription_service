@@ -23,6 +23,13 @@ const codes = {
     code_already_in_queue: 16,
     code_otp_not_found: 17
 }
+
+// Micro Service URLs
+const subscriber_query = 'http://localhost:3005';
+const user_service = 'http://localhost:3007';
+const billing_service = 'http://localhost:3008';
+
+
 const default_package_id = "QDfC";
 const queueNames = {
     // producers
@@ -30,20 +37,26 @@ const queueNames = {
 }
 let config = {
     development: {
-        port: '5000',
+        port: 3004,
         mongoDB: 'mongodb://localhost:27017/goonjpaywall',
         rabbitMq: 'amqp://127.0.0.1',
         queueNames: queueNames,
         codes: codes,
         default_package_id: default_package_id,
+        user_service: user_service,
+        subscriber_query: subscriber_query,
+        billing_service: billing_service,
     },
     staging: {
-        port: '5000',
+        port: 3004,
         mongoDB: 'mongodb://localhost:27017/goonjpaywall',
         rabbitMq: 'amqp://127.0.0.1',
         queueNames: queueNames,
         codes: codes,
         default_package_id: default_package_id,
+        user_service: user_service,
+        subscriber_query: subscriber_query,
+        billing_service: billing_service,
     },
     production: {
         port: process.env.PW_PORT,
@@ -52,6 +65,9 @@ let config = {
         queueNames: queueNames,
         codes: codes,
         default_package_id: default_package_id,
+        user_service: user_service,
+        subscriber_query: subscriber_query,
+        billing_service: billing_service,
     }
 };
 

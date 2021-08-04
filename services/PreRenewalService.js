@@ -1,10 +1,5 @@
 const container = require('../configurations/container');
 const subscriptionRepo = container.resolve("subscriptionRepository");
-const subscriberRepo = container.resolve("subscriberRepository");
-const subscriptionService = container.resolve("subscriptionService");
-const userRepo = container.resolve("userRepository");
-const config = require('../config')
-const messageRepository = container.resolve("messageRepository");
 
 getPreRenewalSubscriptions = async() => {
     try {
@@ -16,10 +11,8 @@ getPreRenewalSubscriptions = async() => {
             
             try {
                 // TODO Unsubcribe
-                let subscriber = await subscriberRepo.getSubscriber(preRenewalSubscriptions[i].subscriber_id);
-                // console.log("subscriber_id", subscriber.user_id)
                 // send Message
-                let user = await subscriptionRepo.getUserById(subscriber.user_id);
+                let user = await subscriptionRepo.getUserById(preRenewalSubscriptions[i].user_id);
                 let message = `Kal ap k balance se Goonj TV renewal k Rs15 charge kiye jaein gy. Unsub k liye https://goonj.pk/unsubscribe?proxy=${user._id}&amp;pg=${preRenewalSubscriptions[i].subscribed_package_id} or Istemal k liye goonj.pk`;
                 console.log("msisdn", user._id, message)
                 subscriptionRepo.sendMessageToQueue(message,user.msisdn);

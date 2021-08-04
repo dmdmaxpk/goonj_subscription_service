@@ -1,9 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/paymentController');
-
-router.route('/sources')
-    .get(controller.paymentSources);
+const controller = require('../controllers/SubscriptionController');
 
 router.route('/subscribe')
     .post(controller.subscribe);
@@ -26,5 +23,11 @@ router.route('/recharge')
 
 router.route('/delete')
     .get(controller.delete);
+
+router.route('/get-subscription-by-package-id')
+    .get(controller.getSubscriptionByPackageId)
+
+router.route('/get-packages-of-subscriber')
+    .get(controller.getPackagesOfSubscriber)
 
 module.exports = router;

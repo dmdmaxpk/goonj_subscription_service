@@ -1,13 +1,14 @@
 const mongoose = require('mongoose');
 const Subscription = mongoose.model('Subscription');
 const moment = require("moment");
-
+const Axios = require('axios');
+const config = require('../config');
 class SubscriptionRepository {
 
     async createSubscription (postData)  {
-        let result = await this.getSubscriptionByPaywallId(postData.subscriber_id, postData.paywall_id);
+        let result = await this.getSubscriptionByPaywallId(postData.user_id, postData.paywall_id);
         if(result){
-            let data = "Already exist subscription record with subscriber id "+ postData.subscriber_id +" having package id "+ postData.subscribed_package_id;
+            let data = "Already exist subscription record with user id "+ postData.user_id +" having package id "+ postData.subscribed_package_id;
             console.log(data);
             throw Error(data);
         }else{
@@ -25,22 +26,22 @@ class SubscriptionRepository {
         return result;
     }
 
-    async getSubscriptionHavingPaymentSourceEP (subscriber_id)  {
-        let result = await Subscription.findOne({subscriber_id: subscriber_id, payment_source: 'easypaisa', 'ep_token':{$exists:true}});
+    async getSubscriptionHavingPaymentSourceEP (user_id)  {
+        let result = await Subscription.findOne({user_id: user_id, payment_source: 'easypaisa', 'ep_token':{$exists:true}});
         return result;
     }
     
-    async getAllSubscriptions(subscriber_id)  {
-        let result = await Subscription.find({subscriber_id: subscriber_id});
+    async getAllSubscriptions(user_id)  {
+        let result = await Subscription.find({user_id: user_id});
         return result;
     }
 
-    async getAllActiveSubscriptions(subscriber_id)  {
-        let result = await Subscription.find({subscriber_id: subscriber_id, $or: [{subscription_status: "trial"}, {subscription_status: "billed"}, {subscription_status: "graced"}]});
+    async getAllActiveSubscriptions(user_id)  {
+        let result = await Subscription.find({user_id: user_id, $or: [{subscription_status: "trial"}, {subscription_status: "billed"}, {subscription_status: "graced"}]});
         return result;
     }
 
-    async getQueuedCount(subscriber_id)  {
+    async getQueuedCount(user_id)  {
         let result = await Subscription.countDocuments({queued:true});
         return result;
     }
@@ -72,18 +73,18 @@ class SubscriptionRepository {
         return result;
     }
 
-    async getSubscriptionByPackageId(subscriber_id, package_id)  {
-        let result = await Subscription.findOne({subscriber_id: subscriber_id, subscribed_package_id: package_id});
+    async getSubscriptionByPackageId(user_id, package_id)  {
+        let result = await Subscription.findOne({user_id: user_id, subscribed_package_id: package_id});
         return result;
     }
 
-    async getSubscriptionByPaywallId(subscriber_id, paywall_id)  {
-        let result = await Subscription.findOne({subscriber_id: subscriber_id, paywall_id: paywall_id});
+    async getSubscriptionByPaywallId(user_id, paywall_id)  {
+        let result = await Subscription.findOne({user_id: user_id, paywall_id: paywall_id});
         return result;
     }
 
-    async getSubscriptionBySubscriberId(subscriber_id)  {
-        let result = await Subscription.findOne({subscriber_id: subscriber_id});
+    async getSubscriptionBySubscriberId(user_id)  {
+        let result = await Subscription.findOne({user_id: user_id});
         return result;
     }
     
@@ -141,8 +142,8 @@ class SubscriptionRepository {
         }
     }
 
-    async updateMany(subscriber_ids)  {
-        let data = await Subscription.updateMany({"subscriber_id": {$in:subscriber_ids }},{$set:{should_remove: true}});
+    async updateMany(user_ids)  {
+        let data = await Subscription.updateMany({"user_id": {$in:user_ids }},{$set:{should_remove: true}});
         return data;
     }
     
@@ -151,8 +152,8 @@ class SubscriptionRepository {
         return result;
     }
     
-    async deleteAllSubscriptions (subscriber_id)  {
-        const result = await Subscription.deleteMany({subscriber_id: subscriber_id});
+    async deleteAllSubscriptions (user_id)  {
+        const result = await Subscription.deleteMany({user_id: user_id});
         return result;
     }
     
@@ -333,7 +334,7 @@ class SubscriptionRepository {
             },{
                 $group: {
                     _id: "$affiliate_mid",
-                    subscriber_ids: {$addToSet: "$subscriber_id"}
+                    user_ids: {$addToSet: "$user_id"}
                 }
             }
             ]);
@@ -399,10 +400,10 @@ class SubscriptionRepository {
         return results;
     }
 
-    async getPackagesOfSubscriber(subscriber_id){
-        if (subscriber_id) {
+    async getPackagesOfSubscriber(user_id){
+        if (user_id) {
             try {
-                let package_ids = await Subscription.find({subscriber_id: subscriber_id }).select('subscribed_package_id');
+                let package_ids = await Subscription.find({user_id: user_id }).select('subscribed_package_id');
                 return package_ids;
             } catch (err) {
                 throw err;
@@ -424,18 +425,18 @@ class SubscriptionRepository {
         },{
             $project:{
                 _id: 0,
-                subscriber_id: 1,
+                user_id: 1,
             }
         },{
             $lookup:{
                 from: "billinghistories",
-                let: {subscriber_id: "$subscriber_id"},
+                let: {user_id: "$user_id"},
                 pipeline:[
                                     {
                                         $match: {
                                                 $expr: {
                                 $and:[
-                                                        {$eq: ["$subscriber_id", "$$subscriber_id"]},
+                                                        {$eq: ["$user_id", "$$user_id"]},
                                                         {$eq: ["$billing_status", "trial"]}
                                 ]
                                                 }
@@ -450,31 +451,31 @@ class SubscriptionRepository {
             $project:{
                 _id: 0,
                 "package_id": "$history.package_id",
-                "subscriber_id": "$history.subscriber_id",
+                "user_id": "$history.user_id",
                 "history.billing_dtm": 1
             }
         },{
             $project:{
                 "package_id": "$package_id",
-                "subscriber_id": "$subscriber_id",
+                "user_id": "$user_id",
                 "trial_dt": "$history.billing_dtm"
             }
         },{
             $project:{
                 "package_id": "$package_id",
-                "subscriber_id": "$subscriber_id",
+                "user_id": "$user_id",
                 "trial_date": {"$dayOfMonth" : "$trial_dt"}
             }
         },{
             $lookup:{
                 from: "billinghistories",
-                let: {subscriber_id: "$subscriber_id", trial_date: "$trial_date"},
+                let: {user_id: "$user_id", trial_date: "$trial_date"},
                 pipeline:[
                                     {
                                         $match: {
                                                 $expr: {
                                 $and:[
-                                                    {$eq: ["$subscriber_id","$$subscriber_id"]},
+                                                    {$eq: ["$user_id","$$user_id"]},
                                                     {$eq: ["$billing_status","Success"]},
                                 {$eq: [{"$dayOfMonth":"$billing_dtm"}, {$add:["$$trial_date",1]}]}
                                 ]
@@ -513,13 +514,13 @@ class SubscriptionRepository {
                 },{
                     $project:{
                         "_id": 0,
-                        "subscriber_id": 1	
+                        "user_id": 1	
                     }
                 },{
                     $lookup:{
                         from: "subscribers",
-                        let: {subscriber_id: "$subscriber_id" },
-                                pipeline:[{$match: {$expr: {$eq: ["$_id", "$$subscriber_id"]}}}],
+                        let: {user_id: "$user_id" },
+                                pipeline:[{$match: {$expr: {$eq: ["$_id", "$$user_id"]}}}],
                         as: "subs"
                     }
                 },{
@@ -573,7 +574,7 @@ class SubscriptionRepository {
         },{
             $project: {
                 _id:0,
-                subscriber_id: 1
+                user_id: 1
             }
         }
         ]);
@@ -600,18 +601,19 @@ class SubscriptionRepository {
     // API Calls
     async getUserBySubscriptionId(subscription_id){
         // let subscription = await this.subscriptionRepo.getSubscription(subscription_id);
-        // let subscriber = await this.subscriberRepo.getSubscriber(subscription.subscriber_id);
-        // if(subscriber){
-        //     let user = this.getUserById(subscriber.user_id);
-        //     return user;
-        // }
-        // return undefined;
+        // let subscriber = await this.subscriberRepo.getSubscriber(subscription.user_id);
+        let user = this.getUserById(subscription_id.user_id);
+        if(user){
+            return user;
+        }
+        return undefined;
     }
 
     async getUserByMsisdn(msisdn){
-        return await Axios.get(`${config.user_service_url}/get_user_by_msisdn?msisdn=${msisdn}`)
+        return await Axios.get(`${config.user_service}/user/get_user_by_msisdn?msisdn=${msisdn}`)
         .then(res =>{
             let result = res.data;
+            console.log("user result", result)
             return result;
         })
         .catch(err =>{
@@ -620,7 +622,7 @@ class SubscriptionRepository {
     }
 
     async getUserById(user_id){
-        return await Axios.get(`${config.user_service_url}/get_user_by_id?id=${user_id}`)
+        return await Axios.get(`${config.user_service}/get_user_by_id?id=${user_id}`)
         .then(res =>{
             let result = res.data;
             return result;
@@ -642,7 +644,7 @@ class SubscriptionRepository {
     }
 
     async createUser(userObj){
-        return await Axios.post(`${config.user_service_url}/create_user`, userObj)
+        return await Axios.post(`${config.user_service}/create_user`, userObj)
         .then(res =>{ 
             let result = res.data;
             return result
@@ -653,7 +655,7 @@ class SubscriptionRepository {
     }
 
     async updateUser(msisdn, is_gray_listed){
-        return await Axios.post(`${config.user_service_url}/update_user`, {msisdn, is_gray_listed})
+        return await Axios.post(`${config.user_service}/update_user`, {msisdn, is_gray_listed})
         .then(res =>{ 
             let result = res.data;
             return result
@@ -707,8 +709,8 @@ class SubscriptionRepository {
         })
     }
 
-    async deleteHistoryForSubscriber(subscriber_id){
-        return await Axios.post(`${config.billing_service}/delete_history_for_subscriber`, {subscriber_id})
+    async deleteHistoryForSubscriber(user_id){
+        return await Axios.post(`${config.billing_service}/delete_history_for_subscriber`, {user_id})
         .then(res =>{ 
             let result = res.data;
             return result

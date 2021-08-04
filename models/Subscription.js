@@ -8,7 +8,8 @@ const subscriptionSchema = new Schema({
     //Generating shortid instead of uuid
     _id: { type: ShortId, len: 12, retries: 4},
 
-    subscriber_id: {type: ShortId, required: true},
+    // subscriber_id: {type: ShortId, required: true},
+    user_id: {type: ShortId, required: true},
     paywall_id: {type: ShortId, required: true},
     subscribed_package_id: {type: ShortId, required: true},
 
@@ -60,6 +61,6 @@ const subscriptionSchema = new Schema({
     ep_token: { type: String },
     active: { type: Boolean, default: true, index: true }
 }, { strict: true });
-subscriptionSchema.index({subscriber_id:1,paywall_id:1},{unique: true});
+subscriptionSchema.index({user_id:1,paywall_id:1},{unique: true});
 
 module.exports = mongoose.model('Subscription', subscriptionSchema);

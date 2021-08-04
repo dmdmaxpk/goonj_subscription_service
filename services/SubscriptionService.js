@@ -11,9 +11,9 @@ class SubscriptionService {
             let subscriptionsToUnsubscribe = [];
             
             if(user){
-                let subscriber = await this.subscriberRepository.getSubscriberByUserId(user._id);
-                if(subscriber){
-                    let subscriptions = await this.subscriptionRepository.getAllSubscriptions(subscriber._id);
+                // let subscriber = await this.subscriberRepository.getSubscriberByUserId(user._id);
+                // if(subscriber){
+                    let subscriptions = await this.subscriptionRepository.getAllSubscriptions(user._id);
                     let alreadyUnsubscribed = 0;
 
                     if(slug && slug === "all"){
@@ -45,7 +45,7 @@ class SubscriptionService {
 
                             let history = {};
                             history.user_id = subscriber.user_id;
-                            history.subscriber_id = subscription.subscriber_id;
+                            // history.subscriber_id = subscription.subscriber_id;
                             history.subscription_id = subscription._id;
                             history.package_id = subscription.subscribed_package_id;
                             history.paywall_id = paywall._id;
@@ -69,9 +69,9 @@ class SubscriptionService {
                         }
                     }
 
-                }else{
-                    return "This service is not active at your number";    
-                }
+                // }else{
+                //     return "This service is not active at your number";    
+                // }
                 
             }else{
                 return "This service is not active at your number"
@@ -87,7 +87,7 @@ class SubscriptionService {
             if (subscription_id){
                 let subscription = await this.subscriptionRepository.getSubscription(subscription_id);
                 let packageOfThisSubcription = await this.subscriptionRepository.getPackage({_id: subscription.subscribed_package_id});
-                let subscriber = await this.subscriberRepository.getSubscriber(subscription.subscriber_id);
+                // let subscriber = await this.subscriberRepository.getSubscriber(subscription.subscriber_id);
                 let expire = await this.subscriptionRepository.updateSubscription(subscription_id,{
                     subscription_status: 'expired', 
                     is_allowed_to_stream:false, 
@@ -98,7 +98,7 @@ class SubscriptionService {
                 });
                 let history = {};
                 history.user_id = subscriber.user_id;
-                history.subscriber_id = subscription.subscriber_id;
+                // history.subscriber_id = subscription.subscriber_id;
                 history.subscription_id = subscription._id;
                 history.package_id = subscription.subscribed_package_id;
                 history.paywall_id = packageOfThisSubcription.paywall_id;
@@ -125,9 +125,9 @@ class SubscriptionService {
                    let user  = await this.subscriptionRepository.getUserByMsisdn(msisdn);
                    let paywall  = await this.subscriptionRepository.getPaywallsBySlug(paywall_slug);
                    if (user && paywall ) {
-                        let subscriber = await this.subscriberRepository.getSubscriberByUserId(user._id);
-                        if (subscriber) {
-                            let subscriptions = await this.subscriptionRepository.getAllSubscriptions(subscriber._id);
+                        // let subscriber = await this.subscriberRepository.getSubscriberByUserId(user._id);
+                        // if (subscriber) {
+                            let subscriptions = await this.subscriptionRepository.getAllSubscriptions(user._id);
                             if (subscriptions.length > 0) {
                                 let temp = 0;
                                 for (let i =0 ; i < subscriptions.length; i++) {
@@ -135,7 +135,7 @@ class SubscriptionService {
                                     if (paywall.package_ids.indexOf(subscription.subscribed_package_id) > -1){
                                         let history = {};
                                         history.user_id = subscriber.user_id;
-                                        history.subscriber_id = subscription.subscriber_id;
+                                        // history.subscriber_id = subscription.subscriber_id;
                                         history.subscription_id = subscription._id;
                                         history.package_id = subscription.subscribed_package_id;
                                         history.paywall_id = paywall._id;
@@ -158,9 +158,9 @@ class SubscriptionService {
                             } else {
                                 resolve("User has not been subscribed");
                             }
-                        } else {
-                            resolve("User has not been subscribed");    
-                        }
+                        // } else {
+                        //     resolve("User has not been subscribed");    
+                        // }
                     } else {
                         resolve("User or Paywall doesn't exist");
                     }
