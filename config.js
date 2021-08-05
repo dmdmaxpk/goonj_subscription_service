@@ -35,7 +35,7 @@ const rabbitMqConnectionString = 'amqp://127.0.0.1';
 const db_name = 'goonjpaywall';
 
 const queueNames = {
-    subscriptionDispatcher: 'subscriptionDispatcher',
+    subscriptionResponseDispatcher: 'subscriptionResponseDispatcher',
     billingHistoryDispather: 'billingHistoryDispather'
 }
 
