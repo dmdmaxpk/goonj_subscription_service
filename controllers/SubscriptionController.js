@@ -279,7 +279,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						// No micro charge for daily affiliate subscriptions
 						if(packageObj._id === 'QDfC' && (req.body.affiliate_mid === 'gdn' || req.body.affiliate_mid === 'gdn1' || req.body.affiliate_mid === 'gdn2' || req.body.affiliate_mid === 'gdn3')){
 							try {
-								console.log("otp: ", otp, "user obj", user, "sub obj", subscriptionObj, "pkg obj", packageObj)
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
@@ -444,7 +443,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									if(subscription.last_subscription_status && subscription.last_subscription_status === "trial"){
 										try {
 											subscription.payment_source = req.body.payment_source;
-											console.log("otp: ", otp, "user obj", user, "sub obj", subscription, "pkg obj", packageObj)
 											let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 											console.log("result",result,user.msisdn);
 											if(result.message === "success"){
@@ -470,7 +468,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								}else{
 									try {
 										subscription.payment_source = req.body.payment_source;
-										console.log("otp: ", otp, "user obj", user, "sub obj", subscription, "pkg obj", packageObj)
 										let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 										console.log("result direct billing - ",result,user.msisdn);
 										if(result.message === "success"){
@@ -493,7 +490,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									if(newPackageObj.package_duration > currentPackageObj.package_duration){
 										// It means switching from daily to weekly, process billing
 										try {
-											console.log("otp: ", otp, "user obj", user, "sub obj", subscription, "pkg obj", packageObj)
 											let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 											if(result && result.message === "success"){
 												res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
@@ -525,7 +521,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									}
 								} else if (subscription.subscription_status === "graced" || subscription.subscription_status === "expired" || subscription.subscription_status === "trial" ) {
 								try {
-									console.log("otp: ", otp, "user obj", user, "sub obj", subscription, "pkg obj", packageObj)
 									let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 									if(result.message === "success"){
 										res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
@@ -615,7 +610,6 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 				console.log("Trying direct billing with mc rules for ", packageObj._id);
 			}
 			subscriptionObj.subscribed_package_id = packageObj._id;
-			console.log("otp: ", otp, "user obj", user, "sub obj", subscriptionObj, "pkg obj", packageObj)
 			let result = await tpEpCoreRepo.processDirectBilling(subscriptionObj.ep_token ? undefined : otp, user, subscriptionObj, packageObj, true);
 			console.log("Direct billing processed with status ", result.message);
 			if(result.message === "success"){
@@ -735,7 +729,6 @@ exports.recharge = async (req, res) => {
 				let packageObj = await coreRepo.getPackage({_id: package_id});
 				if(packageObj){
 					await subscriptionRepo.updateSubscription(subscription._id, {consecutive_successive_bill_counts: 0, is_manual_recharge: true});
-					console.log("otp: ", otp, "user obj", user, "sub obj", subscription, "pkg obj", packageObj)
 					let result = await tpEpCoreRepo.processDirectBilling(undefined, user, subscription, packageObj, true);
 					if(result.message === "success"){
 						res.send({code: config.codes.code_success, message: 'Recharged successfully', gw_transaction_id: gw_transaction_id});
