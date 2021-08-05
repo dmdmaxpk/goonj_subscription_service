@@ -326,7 +326,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								res.send({code: config.codes.code_error, message: 'Failed to subscribe package' + (subsResponse.desc ? ', possible cause: '+subsResponse.desc : ''), package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
 							}
 							subscriptionObj = subsResponse.subscriptionObj;
-							packageObj = await coreRepo.getPackage({_id: subscriptionObj.subscribed_package_id});
+							packageObj = await coreRepo.getPackage(subscriptionObj.subscribed_package_id);
 						}
 					}catch(err){
 						console.log("=> ", err);
@@ -482,8 +482,8 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						}else{
 								// request is coming for the same paywall but different package
 								if (subscription.subscription_status === "billed"){
-									let newPackageObj = await coreRepo.getPackage({_id: newPackageId});
-									let currentPackageObj = await coreRepo.getPackage({_id: currentPackageId});
+									let newPackageObj = await coreRepo.getPackage(newPackageId);
+									let currentPackageObj = await coreRepo.getPackage(currentPackageId);
 
 									if(newPackageObj.package_duration > currentPackageObj.package_duration){
 										// It means switching from daily to weekly, process billing
@@ -726,7 +726,7 @@ exports.recharge = async (req, res) => {
 				res.send({code: config.codes.code_in_billing_queue, message: 'Already in billing process!', gw_transaction_id: gw_transaction_id});
 			}else{
 				// try charge attempt
-				let packageObj = await coreRepo.getPackage({_id: package_id});
+				let packageObj = await coreRepo.getPackage(package_id);
 				if(packageObj){
 					await subscriptionRepo.updateSubscription(subscription._id, {consecutive_successive_bill_counts: 0, is_manual_recharge: true});
 					let result = await tpEpCoreRepo.processDirectBilling(undefined, user, subscription, packageObj, true);
@@ -891,7 +891,7 @@ exports.unsubscribe = async (req, res) => {
 				for(let i = 0; i < subscriptions.length; i++){
 					let subscription = subscriptions[i];
 
-					let packageObj = await coreRepo.getPackage({_id: subscription.subscribed_package_id});
+					let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
 					let result = await subscriptionRepo.updateSubscription(subscription._id, 
 					{
 						auto_renewal: false, 
@@ -971,7 +971,7 @@ exports.expire = async (req, res) => {
 
 	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
-		let packageObj = await coreRepo.getPackage({_id: package_id});
+		let packageObj = await coreRepo.getPackage(package_id);
 		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
 		let subscription = await subscriptionRepo.getSubscriptionByPackageId(user._id. package_id);
 		await subscription.updateSubscription(subscription._id, {auto_renewal: false, subscription_status: 'expired', consecutive_successive_bill_counts: 0});
