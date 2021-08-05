@@ -4,12 +4,16 @@
   "description": "",
   "main": "app.js",
   "dependencies": {
+    "amqplib": "^0.8.0",
     "awilix": "^4.3.4",
     "axios": "^0.21.1",
     "express": "^4.17.1",
+    "lodash": "^4.17.21",
+    "moment": "^2.29.1",
     "mongoose": "^5.13.5",
     "mongoose-shortid-nodeps": "^0.6.5",
     "nodemon": "^2.0.12",
+    "shortid": "^2.2.16"
   },
   "devDependencies": {},
   "scripts": {
