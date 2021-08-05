@@ -170,7 +170,7 @@ exports.subscribe = async (req, res) => {
 				}
 			}
 	
-			if(response && (response.operator === "telenor" || response.operator === "easypaisa")){
+			if(response && (response.operator === "tp")){
 				try {
 					userObj.operator = response.operator;
 					user = await userRepo.createUser(userObj);
