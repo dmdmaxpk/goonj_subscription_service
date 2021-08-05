@@ -597,6 +597,11 @@ async getPreRenwalSubscriptions(){
     return subs;
 }
 
+// Subscription Consumer functions
+async unQueue (subscription_id) {
+    await this.subscriptionRepo.updateSubscription(subscription_id, {queued: false, is_billable_in_this_cycle:false, priority: 0});
+}
+
 }
 
 module.exports = SubscriptionRepository;

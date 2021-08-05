@@ -70,10 +70,10 @@ class SubscriptionConsumer {
 
                 if(mcDetails && mcDetails.micro_charge){
                     console.log('Micro charge success');
-                    this.createBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, true, mcDetails.micro_price);
+                    this.billingHistoryRepo.assembleBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, true, mcDetails.micro_price);
                 }else{
                     console.log('Full charge success');
-                    this.createBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, false, mPackage.price_point_pkr);
+                    this.billingHistoryRepo.assembleBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, false, mPackage.price_point_pkr);
                 }
                 
             }else if(returnStatus === 'ExcessiveBilling'){
@@ -97,10 +97,10 @@ class SubscriptionConsumer {
     async logExcessiveBilling(packageObj, user, subscription, response_time){
         
         // await this.subscriptionRepo.markSubscriptionInactive(subscription._id);
-        await this.unQueue(subscription._id);
-        // this.shootExcessiveBillingEmail(subscription._id);
+        await this.subscriptionRepo.unQueue(subscription._id);
+        // this.messageRepo.shootExcessiveBillingEmail(subscription._id);
 
-        // Add history
+        // Assembling history
         let history = {};
         history.user_id = user._id;
         history.package_id = packageObj._id;
@@ -113,18 +113,19 @@ class SubscriptionConsumer {
         history.billing_status = "billing_exceeded";
         history.response_time = response_time;
 
-        this.addHistory(history);
+        // pushing to Billing History queue
+        this.billingHistoryRepo.createBillingHistory(history);
     }
     
     async logExcessiveMicroBilling(packageObj, user, subscription, micro_price, transaction_id, response_time){
-        let emailSubject ="Excessive MicroCharing Email";
-        let emailToSend = "paywall@dmdmax.com.pk";
-        let emailText = `Subscription id ${subscription._id} is trying to micro charge on a price greater than package price. Package price is ${packageObj.price_point_pkr} and system tried to charge ${micro_price}`;
-        let billingResponse = "micro-price-point-is-greater-than-package-price-so-didnt-try-charging-attempt";
-
-        this.createBillingHistory(user, subscription, packageObj, billingResponse, 'micro-charging-exceeded', response_time, transaction_id, true, 0);
-        
+        // let emailSubject ="Excessive MicroCharing Email";
+        // let emailToSend = "paywall@dmdmax.com.pk";
+        // let emailText = `Subscription id ${subscription._id} is trying to micro charge on a price greater than package price. Package price is ${packageObj.price_point_pkr} and system tried to charge ${micro_price}`;
         // await this.emailService.sendEmail(emailSubject,emailText,emailToSend);
+        
+        let billingResponse = "micro-price-point-is-greater-than-package-price-so-didnt-try-charging-attempt";
+        this.billingHistoryRepo.assembleBillingHistory(user, subscription, packageObj, billingResponse, 'micro-charging-exceeded', response_time, transaction_id, true, 0);
+        
         console.log('logExcessiveMicroBilling', subscription._id);
         await this.subscriptionRepo.updateSubscription(subscription._id, {active:false, queued:false, is_billable_in_this_cycle: false});
     }
@@ -263,7 +264,7 @@ class SubscriptionConsumer {
             }
 
             history.operator_response = error;
-            await this.addHistory(history);
+            await this.billingHistoryRepo.createBillingHistory(history);
         }
     }
 
@@ -300,59 +301,7 @@ class SubscriptionConsumer {
 
         return tempSubObj;
     }
-    
-    // ADD BILLING HISTORY
-    async createBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {
-        let history = {};
-        history.user_id = user._id;
-        history.subscription_id = subscription._id;
-        history.subscriber_id = subscription.subscriber_id;
-        history.paywall_id = packageObj.paywall_id;
-        history.package_id = subscription.subscribed_package_id;
-        history.transaction_id = transaction_id;
-        history.operator_response = response;
-        history.billing_status = billingStatus;
-        history.response_time = response_time;
-        history.source = subscription.source;
 
-        history.operator = subscription.payment_source?subscription.payment_source:'telenor';
-    
-        if(micro_charge === true){
-            history.price = price;
-            history.micro_charge = true;
-            history.discount = false;
-        }else{
-            history.micro_charge = false;
-            history.discount = false;
-            history.price = price;
-        }
-        
-        this.addHistory(history);
-    }
-    
-    async addHistory(history) {
-        console.time("[timeLog][addHistory]")
-        await this.billingHistoryRepo.createBillingHistory(history);
-        console.timeEnd("[timeLog][addHistory]")
-    }
-
-    // UN-QUEUE SUBSCRIPTION
-    async unQueue (subscription_id) {
-        await this.subscriptionRepo.updateSubscription(subscription_id, {queued: false, is_billable_in_this_cycle:false, priority: 0});
-    }
-    
-    // SHOOT EMAIL
-    async shootExcessiveBillingEmail(subscription_id)  {
-        try {
-            let emailSubject = `User Billing Exceeded`;
-            let emailText = `Subscription id ${subscription_id} has exceeded its billing limit. Please check on priority.`;
-            let emailToSend = `paywall@dmdmax.com.pk`;
-            this.messageRepo.sendEmail(emailSubject,emailText,emailToSend);
-            console.log('Excessive billing email initiated for subscription id ',subscription_id);
-        } catch(err){
-            console.error(err);
-        }   
-    }
     
     async sendAffiliationCallback(tid, mid, user_id, subscription_id, subscriber_id, package_id, paywall_id) {
         let combinedId = tid + "*" +mid;
@@ -373,14 +322,14 @@ class SubscriptionConsumer {
                 console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
                 history.operator_response = fulfilled;
                 history.billing_status = "Affiliate callback sent";
-                await this.addHistory(history);
+                await this.billingHistoryRepo.createBillingHistory(history);
             }
         })
         .catch(async  (error) => {
             console.log(`Affiliate - Marketing - Callback - Error - Having TID - ${tid} - MID ${mid}`, error);
             history.operator_response = error.response.data;
             history.billing_status = "Affiliate callback error";
-            await this.addHistory(history);
+            await this.billingHistoryRepo.createBillingHistory(history);
         });
     }
     
@@ -407,42 +356,6 @@ class SubscriptionConsumer {
                 reject(err);
             });
         });
-    }
-    
-    sendMessage(subscription, msisdn, packageName, price, is_manual_recharge,package_id,user_id) {
-        if(subscription.consecutive_successive_bill_counts === 1){
-            // For the first time or every week of consecutive billing
-    
-            //Send acknowldement to user
-            let message = this.constants.message_after_first_successful_charge[package_id];
-            message = message.replace("%user_id%", user_id)
-            message = message.replace("%pkg_id%", package_id)
-            this.messageRepo.sendMessageToQueue(message, msisdn);
-        }else if(subscription.consecutive_successive_bill_counts % 7 === 0){
-            // Every week
-            //Send acknowledgement to user
-            if (is_manual_recharge){
-                let message = `You have been successfully subscribed for Goonj TV.Rs.${price} has been deducted from your credit. Stay safe and keep watching Goonj TV`;
-                this.messageRepo.sendMessageToQueue(message, msisdn);
-            } else {
-                let unsubLink = `https://www.goonj.pk/unsubscribe?proxy=${user_id}&amp;pg=${package_id}`;
-                let message = this.constants.message_after_repeated_succes_charge[package_id];
-                message = message.replace("%price%",price);
-                message= message.replace("%user_id%",user_id)
-                message= message.replace("%pkg_id%",package_id)
-                this.messageRepo.sendMessageToQueue(message, msisdn);
-            }
-        }
-    }
-    
-    sendMicroChargeMessage (msisdn, fullPrice, price, packageName)  {
-        console.log("Sending %age discount message to "+msisdn);
-        let percentage = ((price / fullPrice)*100);
-        percentage = (100 - percentage);
-    
-        //Send acknowldement to user
-        let message = "You've got "+percentage+"% discount on "+packageName+".  Numainday se baat k liye 727200 milayein.";
-        this.messageRepo.sendMessageToQueue(message, msisdn);
     }
 }
 
