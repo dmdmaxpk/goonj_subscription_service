@@ -7,12 +7,10 @@ const  _ = require('lodash');
 
 class SubscriptionConsumer {
 
-    constructor({subscriptionRepository, billingHistoryRepository, messageRepository, constants}) {
+    constructor({ subscriptionRepository, billingHistoryRepository, messageRepository }) {
         this.subscriptionRepo = subscriptionRepository;
         this.billingHistoryRepo = billingHistoryRepository;
         this.messageRepo = messageRepository;
-        this.constants = constants;
-
     }
 
     async consume(messageObject) {
@@ -302,7 +300,6 @@ class SubscriptionConsumer {
         return tempSubObj;
     }
 
-    
     async sendAffiliationCallback(tid, mid, user_id, subscription_id, subscriber_id, package_id, paywall_id) {
         let combinedId = tid + "*" +mid;
     

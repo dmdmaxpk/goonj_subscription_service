@@ -22,8 +22,8 @@ app.use('/', require('./routes/index'));
 const RabbitMq = require('./rabbit/RabbitMq');
 const rabbitMq = new RabbitMq().getInstance();
 
-const SubscriptionConsumer = require('./rabbit/consumers/SubscriptionConsumer');
-const subscriptionConsumer = new SubscriptionConsumer()
+const container = require('./configurations/container');
+const subscriptionConsumer = container.resolve("subscriptionConsumer");
 
 // Start Server
 let { port } = config;
@@ -40,7 +40,7 @@ app.listen(port, () => {
                 rabbitMq.createQueue(config.queueNames.billingHistoryDispatcher);
 
                 // consume
-                rabbitMq.consumeQueue(config.queueNames.subscriptionDispatcher, (message) => {
+                rabbitMq.consumeQueue(config.queueNames.subscriptionDispatcher, async(message) => {
                     await subscriptionConsumer.consume(JSON.parse(message.content))
                     rabbitMq.acknowledge(message);
                 });
