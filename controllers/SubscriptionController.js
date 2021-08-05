@@ -13,6 +13,7 @@ const constants = container.resolve("constants");
 
 const helper = require('../helper/helper');
 const  _ = require('lodash');
+const billingService = require('../services/billingService');
 
 exports.getSubscriptionDetails = async(req, res) => {
 	let { msisdn,transaction_id } = req.query;
@@ -318,7 +319,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 							let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
 							if(subsResponse && subsResponse.status === "charged"){
 								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed! chance 0', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
-								let createSub = await subscriptionRepo.billingSuccess(user, subscriptionObj, packageObj);
+								let createSub = await billingService.billingSuccess(user, subscriptionObj, packageObj);
 								console.log("new sub", createSub);
 								// let createBillingHistory = await billingHistoryRepo.createBillingHistory()
 								sendChargingMessage = true;
