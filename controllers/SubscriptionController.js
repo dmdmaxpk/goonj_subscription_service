@@ -277,6 +277,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						// No micro charge for daily affiliate subscriptions
 						if(packageObj._id === 'QDfC' && (req.body.affiliate_mid === 'gdn' || req.body.affiliate_mid === 'gdn1' || req.body.affiliate_mid === 'gdn2' || req.body.affiliate_mid === 'gdn3')){
 							try {
+								console.log("otp: ", otp, "user obj", user, "sub obj", subscriptionObj, "pkg obj", packageObj)
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
