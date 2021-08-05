@@ -6,6 +6,7 @@ const config = require('../config');
 class SubscriptionRepository {
 
     async createSubscription (postData)  {
+        console.log('creating subscription', postData);
         let result = await this.getSubscriptionByPaywallId(postData.user_id, postData.paywall_id);
         if(result){
             let data = "Already exist subscription record with user id "+ postData.user_id +" having package id "+ postData.subscribed_package_id;

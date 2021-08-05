@@ -26,13 +26,13 @@ class BillingHistoryRepository {
             history.discount = false;
             history.price = price;
         }
-        
+        console.log("assembled billing history", history);
         this.createBillingHistory(history);
     }
 
 
     async createBillingHistory(history){
-        console.log("Pushing history log to queue!")
+        console.log("warning", "Pushing history log to queue!")
         rabbitMq.addInQueue(config.queueNames.billingHistoryDispather, history);
     }
     
