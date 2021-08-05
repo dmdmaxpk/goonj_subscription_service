@@ -225,7 +225,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 		
 		let newPackageId = req.body.package_id;
 		console.log("incoming package id", newPackageId)
-		let packageObj = await coreRepo.getPackage({_id: newPackageId});
+		let packageObj = await coreRepo.getPackage(newPackageId);
 		console.log("package obj", packageObj)
 		if (packageObj) {
 			let subscription = await subscriptionRepo.getSubscriptionByPaywallId(user._id, packageObj.paywall_id);
