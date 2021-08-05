@@ -633,10 +633,10 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 					return;
 				}
 
-				// let pinLessTokenNumber = result.subscriptionObj.ep_token ? result.subscriptionObj.ep_token : undefined;
-				// if(pinLessTokenNumber){
-				// 	subscriptionObj.ep_token = pinLessTokenNumber;
-				// }
+				let pinLessTokenNumber = result.subscriptionObj.ep_token ? result.subscriptionObj.ep_token : undefined;
+				if(pinLessTokenNumber){
+					subscriptionObj.ep_token = pinLessTokenNumber;
+				}
 
 				let micro_price_points = packageObj.micro_price_points;
 				if(micro_price_points.length > 0){
