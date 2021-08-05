@@ -145,9 +145,8 @@ exports.subscribe = async (req, res) => {
 
 	let gw_transaction_id = req.body.transaction_id;
 	let decodedUser = req.decoded;
-	console.log("warning", decodedUser)
 
-	if(decodedUser && decodedUser.msisdn){
+	// if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
 	
 		let msisdn = decodedUser.msisdn;
@@ -199,10 +198,10 @@ exports.subscribe = async (req, res) => {
 				doSubscribe(req, res, user, gw_transaction_id);
 			}
 		}
-	}else{
-		console.log('No decoded user present');
-		res.send({code: config.codes.code_error, message: "Authentication Failure", gw_transaction_id: gw_transaction_id});
-	}
+	// }else{
+	// 	console.log('No decoded user present');
+	// 	res.send({code: config.codes.code_error, message: "Authentication Failure", gw_transaction_id: gw_transaction_id});
+	// }
 }
 
 doSubscribe = async(req, res, user, gw_transaction_id) => {
