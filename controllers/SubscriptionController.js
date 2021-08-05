@@ -280,7 +280,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
-									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
+									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed! chance 2', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
 								}else{
 									let trial = await activateTrial(req.body.otp? req.body.otp : undefined, req.body.source, user, packageObj, subscriptionObj);
@@ -298,7 +298,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
-									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
+									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed! chance 1', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
 								}else{
 									let trial = await activateTrial(req.body.otp? req.body.otp : undefined, req.body.source, user, packageObj, subscriptionObj);
@@ -317,7 +317,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 							// Live paywall, subscription rules along with micro changing started
 							let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
 							if(subsResponse && subsResponse.status === "charged"){
-								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
+								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed! chance 0', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
 								sendChargingMessage = true;
 							}else if(subsResponse && subsResponse.status === "trial"){
 								res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
@@ -469,7 +469,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 										console.log("result direct billing - ",result,user.msisdn);
 										if(result.message === "success"){
-											res.send({code: config.codes.code_success, message: 'Subscribed Successfully', gw_transaction_id: gw_transaction_id});
+											res.send({code: config.codes.code_success, message: 'Subscribed Successfully chance', gw_transaction_id: gw_transaction_id});
 										}else{
 											res.send({code: config.codes.code_error, message: 'Failed to subscribe, insufficient balance', gw_transaction_id: gw_transaction_id});
 										}
