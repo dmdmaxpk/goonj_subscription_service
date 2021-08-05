@@ -224,9 +224,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 		*/
 		
 		let newPackageId = req.body.package_id;
-		console.log("incoming package id", newPackageId)
 		let packageObj = await coreRepo.getPackage(newPackageId);
-		console.log("package obj", packageObj)
 		if (packageObj) {
 			let subscription = await subscriptionRepo.getSubscriptionByPaywallId(user._id, packageObj.paywall_id);
 			if(!subscription){
@@ -632,8 +630,10 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 				}
 
 				let pinLessTokenNumber = result.subscriptionObj.ep_token ? result.subscriptionObj.ep_token : undefined;
+				console.log("pinLessTokenNumber epToken", pinLessTokenNumber);
 				if(pinLessTokenNumber){
 					subscriptionObj.ep_token = pinLessTokenNumber;
+					console.log("subscriptionObj after epToken", subscriptionObj);
 				}
 
 				let micro_price_points = packageObj.micro_price_points;
