@@ -3,7 +3,7 @@ const config = require('../config');
 
 class MessageRepository{
     async sendMessageToQueue(message, msisdn){
-        return await Axios.post(`${config.message_service}/message/send-to-queue`, {message, msisdn})
+        return await Axios.post(`${config.servicesUrls.message_service}/message/send-to-queue`, {message, msisdn})
         .then(res =>{ 
             let result = res.data;
             return result
@@ -14,7 +14,7 @@ class MessageRepository{
     }
 
     async sendEmail(subject, text, email){
-        return await Axios.post(`${config.message_service}/message/email`, {subject, text, email})
+        return await Axios.post(`${config.servicesUrls.message_service}/message/email`, {subject, text, email})
         .then(res =>{ 
             let result = res.data;
             return result

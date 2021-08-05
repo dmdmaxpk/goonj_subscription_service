@@ -11,7 +11,7 @@ class UserRepository {
     }
 
     async getUserByMsisdn(msisdn){
-        return await Axios.get(`${config.user_service}/user/get_user_by_msisdn?msisdn=${msisdn}`)
+        return await Axios.get(`${config.servicesUrls.user_service}/user/get_user_by_msisdn?msisdn=${msisdn}`)
         .then(res =>{
             let result = res.data;
             console.log("user result", result)
@@ -23,7 +23,7 @@ class UserRepository {
     }
 
     async getUserById(user_id){
-        return await Axios.get(`${config.user_service}/get_user_by_id?id=${user_id}`)
+        return await Axios.get(`${config.servicesUrls.user_service}/get_user_by_id?id=${user_id}`)
         .then(res =>{
             let result = res.data;
             return result;
@@ -34,7 +34,7 @@ class UserRepository {
     }
 
     async createUser(userObj){
-        return await Axios.post(`${config.user_service}/create_user`, userObj)
+        return await Axios.post(`${config.servicesUrls.user_service}/create_user`, userObj)
         .then(res =>{ 
             let result = res.data;
             return result
@@ -45,7 +45,7 @@ class UserRepository {
     }
 
     async updateUser(msisdn, is_gray_listed){
-        return await Axios.post(`${config.user_service}/update_user`, {msisdn, is_gray_listed})
+        return await Axios.post(`${config.servicesUrls.user_service}/update_user`, {msisdn, is_gray_listed})
         .then(res =>{ 
             let result = res.data;
             return result
