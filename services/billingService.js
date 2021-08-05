@@ -53,7 +53,7 @@ billingSuccess = async(user, subscription, packageObj) => {
             subscription.should_affiliation_callback_sent = false;
         }
         
-        updatedSubscription = await subscriptionRepo.createSubscription(subscription);
+        // updatedSubscription = await subscriptionRepo.createSubscription(subscription);
 
         // Check for the affiliation callback
         if( updatedSubscription.affiliate_unique_transaction_id && 
