@@ -14,9 +14,11 @@ class CoreRepository{
     }
     
     async getPackage(_id){
-        return await Axios.get(`${config.servicesUrls.core_service}/package?id=${_id}`)
+        // need to remove the slug check and add a proper way for it
+        return await Axios.get(`${config.servicesUrls.core_service}/package?id=${_id}&slug=${(_id == 'QDfC' || _id == 'QDfG')? 'live' : ''}`)
         .then(res =>{ 
             let result = res.data;
+            console.log("get package response", result)
             return result
         })
         .catch(err =>{
