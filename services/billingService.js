@@ -1,4 +1,5 @@
 const container = require('../configurations/container');
+const Helper = require('../helper/helper');
 const subscriptionRepo = container.resolve("subscriptionRepository");
 const billingHistoryRepo = container.resolve("billingHistoryRepository");
 
@@ -6,7 +7,7 @@ const billingHistoryRepo = container.resolve("billingHistoryRepository");
 billingSuccess = async(user, subscription, packageObj) => {
 
     let serverDate = new Date();
-    let localDate = helper.setDateWithTimezone(serverDate);
+    let localDate = Helper.setDateWithTimezone(serverDate);
     let nextBilling = _.clone(localDate);
     nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
 
