@@ -13,6 +13,7 @@ const constants = container.resolve("constants");
 
 const helper = require('../helper/helper');
 const  _ = require('lodash');
+const e = require('express');
 
 exports.getSubscriptionDetails = async(req, res) => {
 	let { msisdn,transaction_id } = req.query;
@@ -144,6 +145,7 @@ exports.subscribe = async (req, res) => {
 
 	let gw_transaction_id = req.body.transaction_id;
 	let decodedUser = req.decoded;
+	console.log("warning", decodedUser)
 
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
