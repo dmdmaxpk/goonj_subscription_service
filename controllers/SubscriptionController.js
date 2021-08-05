@@ -369,7 +369,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					if (subscriptionObj.affiliate_mid === 'gdn'){
 						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
 					}
-					console.log("Messages",message,user.msisdn);
+					// console.log("Messages",message,user.msisdn);
 					text = message;
 					text = text.replace("%trial_hours%",trial_hours);
 					text = text.replace("%price%",packageObj.display_price_point_numeric);
@@ -386,7 +386,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					if(subscriptionObj.affiliate_mid === 'gdn'){
 						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
 					}
-					console.log("Messages",message, user.msisdn);
+					// console.log("Messages",message, user.msisdn);
 				
 					console.log("Subscription Message Text", message, user.msisdn);
 					messageRepo.sendMessageToQueue(message, user.msisdn);
