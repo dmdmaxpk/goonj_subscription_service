@@ -37,7 +37,6 @@ app.listen(port, () => {
             try{
                 // create queues
                 rabbitMq.createQueue(config.queueNames.subscriptionResponseDispatcher);
-                rabbitMq.createQueue(config.queueNames.billingHistoryDispatcher);
 
                 // consume
                 rabbitMq.consumeQueue(config.queueNames.subscriptionResponseDispatcher, async(message) => {
