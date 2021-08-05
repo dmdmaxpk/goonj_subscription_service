@@ -47,32 +47,32 @@ billingSuccess = async(user, subscription, packageObj) => {
         subscription.subscribed_package_id = packageObj._id;
         subscription.queued = false;
 
-        if(subscription.affiliate_unique_transaction_id && subscription.affiliate_mid){
-            subscription.should_affiliation_callback_sent = true;
-        }else{
-            subscription.should_affiliation_callback_sent = false;
-        }
+        // if(subscription.affiliate_unique_transaction_id && subscription.affiliate_mid){
+        //     subscription.should_affiliation_callback_sent = true;
+        // }else{
+        //     subscription.should_affiliation_callback_sent = false;
+        // }
         
         // updatedSubscription = await subscriptionRepo.createSubscription(subscription);
 
         // Check for the affiliation callback
-        if( updatedSubscription.affiliate_unique_transaction_id && 
-            updatedSubscription.affiliate_mid && 
-            updatedSubscription.is_affiliation_callback_executed === false &&
-            updatedSubscription.should_affiliation_callback_sent === true){
-            if((updatedSubscription.source === "HE" || updatedSubscription.source === "affiliate_web") && updatedSubscription.affiliate_mid != "1") {
-                // Send affiliation callback
-                subscriptionRepo.sendAffiliationCallback(
-                    updatedSubscription.affiliate_unique_transaction_id, 
-                    updatedSubscription.affiliate_mid,
-                    user._id,
-                    updatedSubscription._id,
-                    updatedSubscription.subscriber_id,
-                    packageObj._id,
-                    packageObj.paywall_id
-                    );
-            }
-        }
+        // if( updatedSubscription.affiliate_unique_transaction_id && 
+        //     updatedSubscription.affiliate_mid && 
+        //     updatedSubscription.is_affiliation_callback_executed === false &&
+        //     updatedSubscription.should_affiliation_callback_sent === true){
+        //     if((updatedSubscription.source === "HE" || updatedSubscription.source === "affiliate_web") && updatedSubscription.affiliate_mid != "1") {
+        //         // Send affiliation callback
+        //         subscriptionRepo.sendAffiliationCallback(
+        //             updatedSubscription.affiliate_unique_transaction_id, 
+        //             updatedSubscription.affiliate_mid,
+        //             user._id,
+        //             updatedSubscription._id,
+        //             updatedSubscription.subscriber_id,
+        //             packageObj._id,
+        //             packageObj.paywall_id
+        //             );
+        //     }
+        // }
 
     // }
     subscriptionRepo.createSubscription(subscription);
