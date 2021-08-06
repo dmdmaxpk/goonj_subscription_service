@@ -633,7 +633,7 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 					return;
 				}
 
-				let pinLessTokenNumber = result.subscriptionObj['ep_token'] !== undefined ? result.subscriptionObj.ep_token : undefined;
+				let pinLessTokenNumber = result.subscriptionObj.ep_token ? result.subscriptionObj.ep_token : undefined;
 				if(pinLessTokenNumber){
 					subscriptionObj.ep_token = pinLessTokenNumber;
 				}
