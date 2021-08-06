@@ -6,7 +6,7 @@ class TpEpCoreRepository{
     async processDirectBilling(otp, user, subscriptionObj, packageObj, bool){
         var uuid = Math.random().toString(36).slice(-10);
         let transaction_id = user.msisdn + '_' + user._id + uuid;
-        console.log("direct billing api call", otp, user, subscriptionObj, packageObj, transaction_id);
+        // console.log("direct billing api call", otp, user, subscriptionObj, packageObj, transaction_id);
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: packageObj.partner_id})
         .then(res =>{ 
             let result = res.data;

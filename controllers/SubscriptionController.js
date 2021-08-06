@@ -633,8 +633,9 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 					return;
 				}
 
-				console.log("warning", result.subscriptionObj);
-				let pinLessTokenNumber = result.subscriptionObj.ep_token ? result.subscriptionObj.ep_token : undefined;
+				console.log("warning", subscriptionObj);
+				// let pinLessTokenNumber = result.subscriptionObj.ep_token ? result.subscriptionObj.ep_token : undefined;
+				let pinLessTokenNumber = subscriptionObj.ep_token ? subscriptionObj.ep_token : undefined;
 				if(pinLessTokenNumber){
 					subscriptionObj.ep_token = pinLessTokenNumber;
 				}
