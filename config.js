@@ -26,7 +26,7 @@ const codes = {
 
 const servicesUrls = {
     user_service: 'http://localhost:3007',
-    tp_ep_core_service: 'http://10.0.1.76:3001',
+    tp_ep_core_service: 'http://localhost:3001',
     billing_history_service: 'http://localhost:3008',
     core_service: 'http://localhost:3000',
     message_service: 'http://localhost:3003'
