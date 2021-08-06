@@ -21,7 +21,6 @@ exports.getSubscriptionDetails = async(req, res) => {
 	let obj = {};
 	if (msisdn) {
 		let user = await userRepo.getUserByMsisdn(msisdn);
-		console.log("user", user)
 		if(user) {
 			let rawSubscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
 				let subscriptions = [];
@@ -153,6 +152,7 @@ exports.subscribe = async (req, res) => {
 		let msisdn = req.body.msisdn;
 		console.log("Decoded Msisdn: ", msisdn);
 		let user = await userRepo.getUserByMsisdn(msisdn);
+		console.log("user", user)
 		if(!user){
 			// Means no user in DB, let's create one
 			let userObj = {}, response = {};
