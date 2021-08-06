@@ -281,7 +281,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
-									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed! chance 2', gw_transaction_id: gw_transaction_id});
+									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
 								}else{
 									let trial = await activateTrial(req.body.otp? req.body.otp : undefined, req.body.source, user, packageObj, subscriptionObj);
@@ -299,7 +299,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
-									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed! chance 1', gw_transaction_id: gw_transaction_id});
+									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
 								}else{
 									let trial = await activateTrial(req.body.otp? req.body.otp : undefined, req.body.source, user, packageObj, subscriptionObj);
@@ -319,7 +319,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 							let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
 							console.log("subsResponse", subsResponse);
 							if(subsResponse && subsResponse.status === "charged"){
-								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed! chance 0', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
+								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
 								let createSub = await billingService.billingSuccess(user, subscriptionObj, packageObj);
 								console.log("new sub", createSub);
 								sendChargingMessage = true;
@@ -633,10 +633,10 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 					return;
 				}
 
-				// let pinLessTokenNumber = result.subscriptionObj.ep_token ? result.subscriptionObj.ep_token : undefined;
-				// if(pinLessTokenNumber){
-				// 	subscriptionObj.ep_token = pinLessTokenNumber;
-				// }
+				let pinLessTokenNumber = result.subscriptionObj['ep_token'] !== undefined ? result.subscriptionObj.ep_token : undefined;
+				if(pinLessTokenNumber){
+					subscriptionObj.ep_token = pinLessTokenNumber;
+				}
 
 				let micro_price_points = packageObj.micro_price_points;
 				if(micro_price_points.length > 0){
