@@ -331,7 +331,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								res.send({code: config.codes.code_error, message: 'Failed to subscribe package' + (subsResponse.desc ? ', possible cause: '+subsResponse.desc : ''), package_id: subsResponse.subscriptionObj ? subsResponse.subscriptionObj.subscribed_package_id : '', gw_transaction_id: gw_transaction_id});
 							}
 							subscriptionObj = subsResponse.subscriptionObj;
-							packageObj = await coreRepo.getPackage(subscriptionObj.subscribed_package_id);
+							packageObj = subsResponse.subscriptionObj ? await coreRepo.getPackage(subscriptionObj.subscribed_package_id) : '';
 						}
 					}catch(err){
 						console.log("=> ", err);
