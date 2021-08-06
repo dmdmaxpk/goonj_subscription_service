@@ -613,6 +613,7 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 				console.log("Trying direct billing with mc rules for ", packageObj._id);
 			}
 			subscriptionObj.subscribed_package_id = packageObj._id;
+			console.log("otp", otp)
 			let result = await tpEpCoreRepo.processDirectBilling(subscriptionObj.ep_token ? undefined : otp, user, subscriptionObj, packageObj, true);
 			console.log("Direct billing processed with status ", result.message);
 			if(result.message === "success"){
