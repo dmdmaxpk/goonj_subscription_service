@@ -153,7 +153,6 @@ exports.subscribe = async (req, res) => {
 		let msisdn = req.body.msisdn;
 		console.log("Decoded Msisdn: ", msisdn);
 		let user = await userRepo.getUserByMsisdn(msisdn);
-		console.log("user", user)
 		if(!user){
 			// Means no user in DB, let's create one
 			let userObj = {}, response = {};
@@ -207,7 +206,6 @@ exports.subscribe = async (req, res) => {
 }
 
 doSubscribe = async(req, res, user, gw_transaction_id) => {
-	console.log("user", user);
 	if(user && user.active === true && user.is_black_listed === false){
 		// User available in DB
 		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
