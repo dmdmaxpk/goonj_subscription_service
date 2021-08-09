@@ -890,6 +890,7 @@ exports.unsubscribe = async (req, res) => {
 				subscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
 			}
 
+			console.log("subscription obj", subscriptions);
 
 			let unSubCount = 0;
 
@@ -924,7 +925,7 @@ exports.unsubscribe = async (req, res) => {
 					history.operator = user.operator;
 					result = await billingHistoryRepo.createBillingHistory(history);
 	
-					if(result){
+					// if(result){
 						if(subscription.marketing_source && subscription.marketing_source !== 'none'){
 							
 							// This user registered from a marketer, let's put this user in gray list
@@ -936,9 +937,10 @@ exports.unsubscribe = async (req, res) => {
 						}else{
 							unSubCount += 1;
 						}
-					}
+					// }
 				}
 
+				console.log("unSubCount", unSubCount, "subscriptions.length", subscriptions.length);
 				if(unSubCount === subscriptions.length){
 					// send sms
 					let smsText;
