@@ -1,8 +1,10 @@
 const Axios = require('axios');
 const config = require('../config');
-const billingService = require('../services/billingService');
 
 class TpEpCoreRepository{
+    constructor({billingService}){
+        this.billingService = billingService
+    }
     
     async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing){
         var uuid = Math.random().toString(36).slice(-10);
@@ -15,9 +17,9 @@ class TpEpCoreRepository{
             console.log("billing response", response)
 
             if(response && response.message === "success"){
-                await billingService.billingSuccess(user, subscription, response, packageObj, transaction_id, first_time_billing);
+                this.billingService.billingSuccess(user, subscription, response, packageObj, transaction_id, first_time_billing);
             }else{
-                await billingService.billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing);
+                this.billingService.billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing);
             }
             return response
         })
