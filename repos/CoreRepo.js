@@ -46,6 +46,17 @@ class CoreRepository{
             return err
         })
     }
+
+    async getDecoded(req){
+        return await Axios.post(`${config.servicesUrls.core_service}/auth/authenticate`, {req})
+        .then(res =>{ 
+            let result = res.data;
+            return result
+        })
+        .catch(err =>{
+            return err
+        })
+    }
 }
 
 module.exports = CoreRepository;

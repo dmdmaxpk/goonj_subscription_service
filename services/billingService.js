@@ -84,7 +84,7 @@ billingSuccess = async(user, subscription, packageObj) => {
     history.subscriber_id = subscription.subscriber_id;
     history.paywall_id = packageObj.paywall_id;
     history.package_id = packageObj._id;
-    history.transaction_id = transaction_id;
+    history.transaction_id = transaction_id ? transaction_id : '';
     history.operator_response = response;
     history.price = packageObj.price_point_pkr;
     history.billing_status = "Success";
