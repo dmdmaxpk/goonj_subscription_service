@@ -323,8 +323,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 							console.log("subsResponse", subsResponse);
 							if(subsResponse && subsResponse.status === "charged"){
 								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
-								let createSub = await billingService.billingSuccess(user, subscriptionObj, packageObj);
-								console.log("new sub", createSub);
 								sendChargingMessage = true;
 							}else if(subsResponse && subsResponse.status === "trial"){
 								res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});

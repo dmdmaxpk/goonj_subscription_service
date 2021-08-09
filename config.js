@@ -39,6 +39,12 @@ const queueNames = {
     billingHistoryDispatcher: 'billingHistoryDispatcher'
 }
 
+//Ideation Url
+const Ideation_call_back_url = 'http://bpd.o18.click/';
+const Ideation_call_back_url_2 = 'http://210.56.13.190/goonj_callback.php/';
+const Ideation_call_back_url_3 = `https://postback.level23.nl/?currency=USD&handler=10821&hash=c4e51373f0d516d0d4fdbd7f0e544c61&tracker=`;
+
+
 let config = {
     development: {
         port: 3004,
@@ -46,7 +52,10 @@ let config = {
         queueNames: queueNames,
         codes: codes,
         servicesUrls: servicesUrls,
-        rabbitMqConnectionString: rabbitMqConnectionString
+        rabbitMqConnectionString: rabbitMqConnectionString,
+        Ideation_call_back_url: Ideation_call_back_url,
+        Ideation_call_back_url_2: Ideation_call_back_url_2,
+        Ideation_call_back_url_3: Ideation_call_back_url_3
     },
     staging: {
         port: 3004,
@@ -54,7 +63,10 @@ let config = {
         queueNames: queueNames,
         codes: codes,
         servicesUrls: servicesUrls,
-        rabbitMqConnectionString: rabbitMqConnectionString
+        rabbitMqConnectionString: rabbitMqConnectionString,
+        Ideation_call_back_url: Ideation_call_back_url,
+        Ideation_call_back_url_2: Ideation_call_back_url_2,
+        Ideation_call_back_url_3: Ideation_call_back_url_3
     },
     production: {
         port: 3004,
@@ -62,7 +74,10 @@ let config = {
         queueNames: queueNames,
         codes: codes,
         servicesUrls: servicesUrls,
-        rabbitMqConnectionString: rabbitMqConnectionString
+        rabbitMqConnectionString: rabbitMqConnectionString,
+        Ideation_call_back_url: Ideation_call_back_url,
+        Ideation_call_back_url_2: Ideation_call_back_url_2,
+        Ideation_call_back_url_3: Ideation_call_back_url_3
     }
 };
 

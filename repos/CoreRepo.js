@@ -59,6 +59,17 @@ class CoreRepository{
             return err
         })
     }
+
+    async createBlockUserHistory(msisdn, affiliate_unique_transaction_id, affiliate_mid, response, source){
+        return await Axios.post(`${config.servicesUrls.core_service}/block_user`, {msisdn, affiliate_unique_transaction_id, affiliate_mid, response, source})
+        .then(res =>{ 
+            let result = res.data;
+            return result
+        })
+        .catch(err =>{
+            return err
+        })
+    }
 }
 
 module.exports = CoreRepository;

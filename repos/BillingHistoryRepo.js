@@ -37,18 +37,6 @@ class BillingHistoryRepository {
         console.log("warning", "Pushing history log to queue!", history)
         await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
     }
-    
-    
-    async createBlockUserHistory(msisdn, affiliate_unique_transaction_id, affiliate_mid, response, source){
-        return await Axios.post(`${config.servicesUrls.billing_history_service}/block`, {msisdn, affiliate_unique_transaction_id, affiliate_mid, response, source})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
-    }
 
     async deleteHistoryForSubscriber(user_id){
         return await Axios.post(`${config.servicesUrls.billing_history_service}/delete_history_for_subscriber`, {user_id})
