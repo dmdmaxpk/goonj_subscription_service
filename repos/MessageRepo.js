@@ -6,6 +6,7 @@ class MessageRepository{
         return await Axios.post(`${config.servicesUrls.message_service}/message/send-to-queue`, {message, msisdn})
         .then(res =>{ 
             let result = res.data;
+            console.log("warning ", "message", result)
             return result
         })
         .catch(err =>{
