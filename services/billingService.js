@@ -37,7 +37,7 @@ async billingSuccess(user, subscription, response, packageObj, transaction_id, f
             subscriptionObj.ep_token = subscription.ep_token;
         }
         
-        await this.subscriptionRepo.updateSubscription(subscription._id, subscriptionObj);
+        await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
     } else {
         subscription.subscription_status = 'billed';
         subscription.auto_renewal = true;
@@ -57,7 +57,7 @@ async billingSuccess(user, subscription, response, packageObj, transaction_id, f
             subscription.should_affiliation_callback_sent = false;
         }
         
-        updatedSubscription = await this.subscriptionRepo.createSubscription(subscription);
+        updatedSubscription = await this.subscriptionRepository.createSubscription(subscription);
 
         // Check for the affiliation callback
         if( updatedSubscription.affiliate_unique_transaction_id && 
@@ -94,7 +94,7 @@ async billingSuccess(user, subscription, response, packageObj, transaction_id, f
     history.billing_status = "Success";
     history.source = subscription.source;
     history.operator = subscription.payment_source;
-    await this.billingHistoryRepo.createBillingHistory(history);
+    await this.billingHistoryRepository.createBillingHistory(history);
 }
 
 async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing){
@@ -109,7 +109,7 @@ async billingFailed(user, subscription, response, packageObj, transaction_id, fi
     history.operator_response = response;
     history.billing_status = first_time_billing ? "direct-billing-tried-but-failed" : "switch-package-request-tried-but-failed";
     history.operator = subscription.payment_source;
-    await this.billingHistoryRepo.createBillingHistory(history);
+    await this.billingHistoryRepository.createBillingHistory(history);
 }
 
 async sendAffiliationCallback(tid, mid, user_id, subscription_id, subscriber_id, package_id, paywall_id){
@@ -126,19 +126,19 @@ async sendAffiliationCallback(tid, mid, user_id, subscription_id, subscriber_id,
 
     console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
     this.sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
-        let updated = await this.subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
+        let updated = await this.subscriptionRepository.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
         if(updated){
             console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
             history.operator_response = fulfilled;
             history.billing_status = "Affiliate callback sent";
-            await this.billingHistoryRepo.createBillingHistory(history);
+            await this.billingHistoryRepository.createBillingHistory(history);
         }
     })
     .catch(async  (error) => {
         console.log(`Affiliate - Marketing - Callback - Error - Having TID - ${tid} - MID ${mid}`, error);
         history.operator_response = error.response.data;
         history.billing_status = "Affiliate callback error";
-        await this.billingHistoryRepo.createBillingHistory(history);
+        await this.billingHistoryRepository.createBillingHistory(history);
     });
 }
 
