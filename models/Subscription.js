@@ -53,6 +53,6 @@ const subscriptionSchema = new Schema({
     last_modified: Date,
     added_dtm: { type: Date, default: Date.now, index: true }
 }, { strict: true });
-subscriptionSchema.index({user_id:1,paywall_id:1},{unique: true});
+subscriptionSchema.index({user_id:1},{unique: true});
 
 module.exports = mongoose.model('Subscription', subscriptionSchema);
