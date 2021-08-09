@@ -35,7 +35,7 @@ class BillingHistoryRepository {
 
     async createBillingHistory(history){
         console.log("warning", "Pushing history log to queue!", history)
-        await rabbitMq.addInQueue(config.queueNames.billingHistoryDispather, history);
+        await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
     }
     
     
