@@ -111,7 +111,7 @@ async billingFailed(user, subscription, response, packageObj, transaction_id, fi
     // Add history record
     let history = {};
     history.user_id = user._id;
-    history.source = checkSubscription.source;
+    history.source = subscription.source ? subscription.source : checkSubscription.source;
     history.subscription_id = subscription._id ? subscription._id : checkSubscription._id;
     history.paywall_id = packageObj.paywall_id;
     history.package_id = packageObj._id;
