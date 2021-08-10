@@ -98,11 +98,11 @@ async billingSuccess(user, subscription, response, packageObj, transaction_id, f
 }
 
 async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing){
+    console.log("billing failed: subscription obj", subscription)
     // Add history record
     let history = {};
     history.user_id = user._id;
     history.subscription_id = subscription._id;
-    history.subscriber_id = subscription.subscriber_id;
     history.paywall_id = packageObj.paywall_id;
     history.package_id = packageObj._id;
     history.transaction_id = transaction_id;
