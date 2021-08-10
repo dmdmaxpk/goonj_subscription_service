@@ -593,7 +593,6 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 		subscription = await subscriptionRepo.createSubscription(subscriptionObj);
 	}
 	else{
-		subscriptionObj.last_modified = localDate;
 		subscription = await subscriptionRepo.updateSubscription(checkSubscription._id, subscriptionObj);
 	}
 	
