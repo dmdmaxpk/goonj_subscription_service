@@ -101,6 +101,7 @@ async billingFailed(user, subscription, response, packageObj, transaction_id, fi
     console.log("billing failed: subscription obj", subscription._id, 'first_time_billing', first_time_billing);
 
     let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id);
+    console.log("warning", "checkSubscription: ", checkSubscription, "type ", typeof checkSubscription);
     if(checkSubscription.length < 1){
         subscription.subscription_status = 'none';
         subscription.is_allowed_to_stream = false;
