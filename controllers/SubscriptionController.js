@@ -375,7 +375,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					text = text.replace("%user_id%",subscriptionObj.user_id);
 					text = text.replace("%pkg_id%",packageObj._id);
 					console.log("Subscription Message Text",text,user.msisdn);
-					messageRepo.sendMessageToQueue(text, user.msisdn);
+					messageRepo.sendMessageDirectly(text, user.msisdn);
 				} else if(sendChargingMessage === true) {
 					let trial_hours = packageObj.trial_hours;
 					let message = constants.subscription_messages_direct[packageObj._id];
@@ -388,7 +388,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					// console.log("Messages",message, user.msisdn);
 				
 					console.log("Subscription Message Text", message, user.msisdn);
-					messageRepo.sendMessageToQueue(message, user.msisdn);
+					messageRepo.sendMessageDirectly(message, user.msisdn);
 				}else {
 					console.log("Not sending message",user.msisdn);
 				}
@@ -516,7 +516,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										text = text.replace("%user_id%",user._id);
 										text = text.replace("%current_date%", nextBillingDate);
 										text = text.replace("%next_date%", nextBillingDate);
-										messageRepo.sendMessageToQueue(text, user.msisdn);
+										messageRepo.sendMessageDirectly(text, user.msisdn);
 										console.log("text", text);
 										res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
 									}

@@ -14,6 +14,18 @@ class MessageRepository{
         })
     }
 
+    async sendMessageDirectly(message, msisdn){
+        return await Axios.post(`${config.servicesUrls.message_service}/message/send-directly`, {message, msisdn})
+        .then(res =>{ 
+            let result = res.data;
+            console.log("warning ", "message", result)
+            return result
+        })
+        .catch(err =>{
+            return err
+        })
+    }
+
     async sendEmail(subject, text, email){
         return await Axios.post(`${config.servicesUrls.message_service}/message/email`, {subject, text, email})
         .then(res =>{ 
