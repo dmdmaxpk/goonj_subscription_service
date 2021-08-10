@@ -98,18 +98,26 @@ async billingSuccess(user, subscription, response, packageObj, transaction_id, f
 }
 
 async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing){
-    console.log("billing failed: subscription obj", subscription._id)
+    console.log("billing failed: subscription obj", subscription._id, 'first_time_billing', first_time_billing);
+
+    let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id);
+    if(checkSubscription.length < 1){
+        subscription.subscription_status = 'none';
+        subscription.is_allowed_to_stream = false;
+
+        // creating subscription with None status in case of New user Failed Billing
+        await this.subscriptionRepository.createSubscription(subscription);
+    }
     // Add history record
     let history = {};
     history.user_id = user._id;
-    history.subscription_id = subscription._id ? subscription._id : undefined;
+    history.subscription_id = subscription._id;
     history.paywall_id = packageObj.paywall_id;
     history.package_id = packageObj._id;
     history.transaction_id = transaction_id;
     history.operator_response = response;
     history.billing_status = first_time_billing ? "direct-billing-tried-but-failed" : "switch-package-request-tried-but-failed";
     history.operator = subscription.payment_source;
-    console.log("history", history);
     await this.billingHistoryRepository.createBillingHistory(history);
 }
 
