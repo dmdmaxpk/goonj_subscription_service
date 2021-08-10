@@ -594,7 +594,7 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	}
 	else{
 		subscriptionObj.last_modified = localDate;
-		subscription = await subscriptionRepo.updateSubscription(subscriptionObj);
+		subscription = await subscriptionRepo.updateSubscription(checkSubscription._id, subscriptionObj);
 	}
 	
 	billingHistory.user_id = user._id;
