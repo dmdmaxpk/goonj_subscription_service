@@ -195,7 +195,7 @@ class SubscriptionService {
         
                     // send sms to user
                     let text = `Apki Goonj TV per Live TV Weekly ki subscription khatm kr di gai ha. Phr se subscribe krne k lye link par click karen https://www.goonj.pk/ `;
-                    this.messageRepository.sendMessageToQueue(text,msisdn);
+                    this.messageRepository.sendMessageDirectly(text,msisdn);
                     resolve("Succesfully unsubscribed");
                 } else {
                     resolve("Subscription id not found");
