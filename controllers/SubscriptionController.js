@@ -554,7 +554,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 
 	console.log("warning", "trial sub obj", subscriptionObj);
-	
+
 	let nexBilling = new Date();
 	let trial_hours = packageObj.trial_hours;
 	if (subscriptionObj.source === 'daraz'){
@@ -585,12 +585,18 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	subscriptionObj.subscription_status = 'trial';
 	subscriptionObj.is_allowed_to_stream = true;
 	subscriptionObj.should_affiliation_callback_sent = false;
-	let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
-	
 
+	let checkSubscription = await subscriptionRepo.getSubscriptionByPackageId(user._id, packageObj._id);
+	let subscription = undefined;
+
+	if(checkSubscription === null){
+		subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+	}
+	else{
+		subscription = await subscriptionRepo.updateSubscription(subscriptionObj);
+	}
 	
 	billingHistory.user_id = user._id;
-	// billingHistory.subscriber_id = subscriber._id;
 	billingHistory.subscription_id = subscription._id;
 	billingHistory.paywall_id = packageObj.paywall_id;
 	billingHistory.package_id = packageObj._id;
