@@ -106,13 +106,13 @@ async billingFailed(user, subscription, response, packageObj, transaction_id, fi
         subscription.is_allowed_to_stream = false;
 
         // creating subscription with None status in case of New user Failed Billing
-        await this.subscriptionRepository.createSubscription(subscription);
+        checkSubscription = await this.subscriptionRepository.createSubscription(subscription);
     }
     // Add history record
     let history = {};
     history.user_id = user._id;
     history.source = subscription.source ? subscription.source : checkSubscription.source;
-    history.subscription_id = subscription._id ? subscription._id : checkSubscription._id;
+    history.subscription_id = checkSubscription._id;
     history.paywall_id = packageObj.paywall_id;
     history.package_id = packageObj._id;
     history.transaction_id = transaction_id;
