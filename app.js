@@ -35,9 +35,6 @@ app.listen(port, () => {
         }else{
             console.log('RabbitMq status', response);
             try{
-                // create queues
-                rabbitMq.createQueue(config.queueNames.subscriptionResponseDispatcher);
-
                 // consume
                 rabbitMq.consumeQueue(config.queueNames.subscriptionResponseDispatcher, async(message) => {
                     await subscriptionConsumer.consume(JSON.parse(message.content))

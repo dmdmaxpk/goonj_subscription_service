@@ -1,4 +1,5 @@
 const Axios = require('axios');
+const { nanoid } = require('nanoid');
 const config = require('../config');
 
 class TpEpCoreRepository{
@@ -7,10 +8,8 @@ class TpEpCoreRepository{
     }
     
     async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing){
-        var uuid = Math.random().toString(36).slice(-10);
-        let transaction_id = user.msisdn + '_' + user._id + uuid;
+        let transaction_id = user.operator == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + nanoid(10);
         let ep_token = subscriptionObj.ep_token ? subscriptionObj.ep_token : undefined;
-        console.log("warning: direct billing api call subscription obj", subscriptionObj);
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: packageObj.partner_id, ep_token})
         .then(res =>{ 
             let response = res.data;
@@ -37,6 +36,13 @@ class TpEpCoreRepository{
         .catch(err =>{
             return err
         })
+    }
+
+    async assembleChargeAttempt(msisdn, packageObj, transaction_id, subscription, micro_price){
+        let user = {}
+        user.msisdn = msisdn;
+        packageObj.price = micro_price ? micro_price : packageObj.price;
+        await this.processDirectBilling(undefined, user, subscription, packageObj, false)
     }
 }
 
