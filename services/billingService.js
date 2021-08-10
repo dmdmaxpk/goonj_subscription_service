@@ -98,17 +98,18 @@ async billingSuccess(user, subscription, response, packageObj, transaction_id, f
 }
 
 async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing){
-    console.log("billing failed: subscription obj", subscription)
+    console.log("billing failed: subscription obj", subscription._id)
     // Add history record
     let history = {};
     history.user_id = user._id;
-    history.subscription_id = subscription._id;
+    history.subscription_id = subscription._id ? subscription._id : undefined;
     history.paywall_id = packageObj.paywall_id;
     history.package_id = packageObj._id;
     history.transaction_id = transaction_id;
     history.operator_response = response;
     history.billing_status = first_time_billing ? "direct-billing-tried-but-failed" : "switch-package-request-tried-but-failed";
     history.operator = subscription.payment_source;
+    console.log("history", history);
     await this.billingHistoryRepository.createBillingHistory(history);
 }
 
