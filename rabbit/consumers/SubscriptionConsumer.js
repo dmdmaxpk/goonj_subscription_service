@@ -18,20 +18,24 @@ class SubscriptionConsumer {
 
         let user = messageObject.user;
         let mPackage = messageObject.package;
-        let subscription = messageObject.subscription;
-        let mcDetails = messageObject.mcDetails;
+
+        
+        let subscription = await this.subscriptionRepository.getSubscription(messageObject.subscription_id);
+        let microStatus = messageObject.micro_charge;
+        let amount = messageObject.amount;
         let transaction_id = messageObject.transaction_id;
-        let returnObject = messageObject.returnObject;
+        let returnObject = messageObject.api_response;
+        let paymentSource = messageObject.payment_source;
 
 
         if(returnObject){
-            let returnStatus = returnObject.status;
+            let returnStatus = returnObject.status; // TODO: check if Success comes as a Status in API respnse
             let response_time = 0;
-            if (returnObject.hasOwnProperty('api_response_time')){
-                response_time = returnObject.api_response_time;
+            if (messageObject.hasOwnProperty('api_response_time')){
+                response_time = messageObject.api_response_time;
             }
 
-            if(returnStatus === 'Success'){
+            if(returnStatus === 'Success'){ 
                 // Success billing
                 let serverDate = new Date();
                 let localDate = helper.setDateWithTimezone(serverDate);
@@ -46,7 +50,7 @@ class SubscriptionConsumer {
                 subscriptionObj.is_allowed_to_stream = true;
                 subscriptionObj.last_billing_timestamp = localDate;
                 subscriptionObj.next_billing_timestamp = nextBilling;
-                subscriptionObj.amount_billed_today = subscription.amount_billed_today + (mcDetails && mcDetails.micro_charge) ? mcDetails.micro_price : mPackage.price_point_pkr;
+                subscriptionObj.amount_billed_today = subscription.amount_billed_today + (microStatus && amount) ? amount : mPackage.price_point_pkr;
                 subscriptionObj.total_successive_bill_counts = ((subscription.total_successive_bill_counts ? subscription.total_successive_bill_counts : 0) + 1);
                 subscriptionObj.consecutive_successive_bill_counts = ((subscription.consecutive_successive_bill_counts ? subscription.consecutive_successive_bill_counts : 0) + 1);
                 subscriptionObj.queued = false;
@@ -54,7 +58,7 @@ class SubscriptionConsumer {
                 // Fields for micro charging
                 subscriptionObj.try_micro_charge_in_next_cycle = false;
                 subscriptionObj.micro_price_point = 0;
-                subscriptionObj.priority = 0;
+                // subscriptionObj.priority = 0;
                 await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
                 rabbitMq.acknowledge(message);
 
@@ -67,18 +71,18 @@ class SubscriptionConsumer {
                     }
                 }
 
-                if(mcDetails && mcDetails.micro_charge){
+                if(microStatus && amount){
                     console.log('Micro charge success');
-                    this.sendMicroChargeMessage(user.msisdn, mPackage.display_price_point, mcDetails.micro_price, mPackage.package_name)
-                    this.billingHistoryRepository.assembleBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, true, mcDetails.micro_price);
+                    this.sendMicroChargeMessage(user.msisdn, mPackage.display_price_point, amount, mPackage.package_name)
+                    this.billingHistoryRepository.assembleBillingHistory(user, subscription, mPackage, returnObject, returnStatus, response_time, transaction_id, true, amount);
                 }else{
                     console.log('Full charge success');
                     this.sendRenewalMessage(subscription, user.msisdn, mPackage.package_name, mPackage.display_price_point, true, mPackage._id, user._id)
-                    this.billingHistoryRepository.assembleBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, false, mPackage.price_point_pkr);
+                    this.billingHistoryRepository.assembleBillingHistory(user, subscription, mPackage, returnObject, returnStatus, response_time, transaction_id, false, mPackage.price_point_pkr);
                 }
                 
             }else{
-                await this.assignGracePeriod(subscription, user, mPackage, false, returnObject.api_response, response_time, transaction_id);
+                await this.assignGracePeriod(subscription, user, mPackage, false, returnObject, response_time, transaction_id);
                 rabbitMq.acknowledge(message);
             }
         }else{
@@ -108,7 +112,7 @@ class SubscriptionConsumer {
             subscriptionObj.is_billable_in_this_cycle = false;
             subscriptionObj.try_micro_charge_in_next_cycle = false;
             subscriptionObj.micro_price_point = 0;
-            subscriptionObj.priority = 0;
+            // subscriptionObj.priority = 0;
             
             historyStatus="graced";
 
@@ -133,7 +137,7 @@ class SubscriptionConsumer {
                 subscriptionObj.is_billable_in_this_cycle = false;
                 subscriptionObj.try_micro_charge_in_next_cycle = false;
                 subscriptionObj.micro_price_point = 0;
-                subscriptionObj.priority = 0;
+                // subscriptionObj.priority = 0;
 
                 expiry_source = "system-after-grace-end";
 
@@ -174,7 +178,7 @@ class SubscriptionConsumer {
                 console.log("Hours since last payment", hours);
                 subscriptionObj.try_micro_charge_in_next_cycle = false;
                 subscriptionObj.micro_price_point = 0;
-                subscriptionObj.priority = 0;
+                // subscriptionObj.priority = 0;
             }
         }else{
             historyStatus = "payment request tried, failed due to insufficient balance.";
@@ -183,7 +187,7 @@ class SubscriptionConsumer {
             subscriptionObj.consecutive_successive_bill_counts = 0;
             subscriptionObj.try_micro_charge_in_next_cycle = false;
             subscriptionObj.micro_price_point = 0;
-            subscriptionObj.priority = 0;
+            // subscriptionObj.priority = 0;
             
             //Send acknowledgement to user
             let message = 'You have insufficient balance for Goonj TV, please try again after recharge. Thanks';
@@ -205,7 +209,6 @@ class SubscriptionConsumer {
             history.billing_status = historyStatus;
             history.user_id = user._id;
             history.subscription_id = subscription._id;
-            history.subscriber_id = subscription.subscriber_id;
             history.paywall_id = packageObj.paywall_id;
             history.package_id = subscription.subscribed_package_id;
             history.micro_charge = subscription.try_micro_charge_in_next_cycle;
@@ -236,22 +239,22 @@ class SubscriptionConsumer {
             if(index > 0){
                 tempSubObj.try_micro_charge_in_next_cycle = true;
                 tempSubObj.micro_price_point = micro_price_points[--index];
-                tempSubObj.priority = 2;
+                // tempSubObj.priority = 2;
             }else if(index === -1){
                 tempSubObj.try_micro_charge_in_next_cycle = true;
                 tempSubObj.micro_price_point = micro_price_points[micro_price_points.length - 1];
-                tempSubObj.priority = 2;
+                // tempSubObj.priority = 2;
             }else{
                 tempSubObj.try_micro_charge_in_next_cycle = false;
                 tempSubObj.micro_price_point = 0;
                 tempSubObj.is_billable_in_this_cycle = false;
-                tempSubObj.priority = 0;
+                // tempSubObj.priority = 0;
             }
         }else{
             // It means micro tying first micro charge attempt
             tempSubObj.try_micro_charge_in_next_cycle = true;
             tempSubObj.micro_price_point = micro_price_points[micro_price_points.length - 1];
-            tempSubObj.priority = 2;
+            // tempSubObj.priority = 2;
         }
 
         return tempSubObj;
