@@ -4,11 +4,11 @@ const config = require('../config');
 
 class TpEpCoreRepository{
     constructor({billingService}){
-        this.billingService = billingService
+        this.billingService = billingService;
     }
     
     async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing){
-        let transaction_id = user.operator == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + nanoid(10);
+        let transaction_id = subscriptionObj.payment_source == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + '_' + nanoid(10);
         let ep_token = subscriptionObj.ep_token ? subscriptionObj.ep_token : undefined;
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: packageObj.partner_id, ep_token})
         .then(res =>{ 
@@ -42,7 +42,27 @@ class TpEpCoreRepository{
         let user = {}
         user.msisdn = msisdn;
         packageObj.price = micro_price ? micro_price : packageObj.price;
-        await this.processDirectBilling(undefined, user, subscription, packageObj, false)
+        // let response = await this.processDirectBilling(undefined, user, subscription, packageObj, false)
+        // return response;
+
+
+        let returnObject = {};
+        try{
+            let response = await this.processDirectBilling(undefined, user, subscription, packageObj, false);
+            if(response.message === "Success"){
+                returnObject.message = "Success";
+                returnObject.api_response = response;
+            }else{
+                returnObject.message = "Failed";
+                returnObject.api_response = response;
+            }
+            return returnObject;
+        }catch(err){
+            if(err && err.response){
+                console.log('Error Micro', err.response.data);
+            }
+            throw err;
+        }
     }
 }
 

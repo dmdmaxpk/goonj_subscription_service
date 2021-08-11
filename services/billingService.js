@@ -2,7 +2,6 @@ const Helper = require('../helper/helper');
 const  _ = require('lodash');
 const config = require('../config');
 const { default: axios } = require('axios');
-const TpEpCoreRepository = require('../repos/TpEpCoreRepo');
 
 class BillingService{
     constructor({subscriptionRepository, billingHistoryRepository}){
@@ -121,85 +120,6 @@ class BillingService{
         history.billing_status = first_time_billing ? "direct-billing-tried-but-failed" : "switch-package-request-tried-but-failed";
         history.operator = subscription.payment_source;
         await this.billingHistoryRepository.createBillingHistory(history);
-    }
-
-    async fullChargeAttempt(msisdn, packageObj, transaction_id, subscription){
-        // if(subscription.payment_source === "easypaisa"){
-            // let returnObject = {};
-            // try{
-            //     let response = await TpEpCoreRepository.assembleChargeAttempt(msisdn, packageObj, transaction_id, subscription);
-            //     if(response.message === "success"){
-            //         returnObject.message = "Success";
-            //         returnObject.api_response = response;
-            //     }else{
-            //         returnObject.message = "Failed";
-            //         returnObject.api_response = response;
-            //     }
-            //     return returnObject;
-            // }catch(err){
-            //     throw err;
-            // }
-        // }else{
-            let returnObject = {};
-            try{
-                let response = await TpEpCoreRepository.assembleChargeAttempt(msisdn, packageObj, transaction_id, subscription);
-                if(response.message === "success"){
-                    returnObject.message = "Success";
-                    returnObject.api_response = response;
-                }else{
-                    returnObject.message = "Failed";
-                    returnObject.api_response = response;
-                }
-                return returnObject;
-            }catch(err){
-                if(err && err.response){
-                    console.log('Error Full', err.response.data);
-                }
-                throw err;
-            }
-        // }
-    }
-
-    async microChargeAttempt(msisdn, packageObj, transaction_id, micro_price, subscription){
-        // if(subscription.payment_source === "easypaisa"){
-        //     let returnObject = {};
-        //     try{
-        //         returnObject.packageObj = packageObj;
-        //         returnObject.msisdn = msisdn;
-        //         returnObject.transactionId = transaction_id;
-        //         returnObject.subscription = subscription;
-
-        //         let response = await TpEpCoreRepository.assembleChargeAttempt(msisdn, packageObj, transaction_id, subscription, micro_price);
-        //         if(response.message === "success"){
-        //             returnObject.message = "Success";
-        //             returnObject.api_response = response;
-        //         }else{
-        //             returnObject.message = "Failed";
-        //             returnObject.api_response = response;
-        //         }
-        //         return returnObject;
-        //     }catch(err){
-        //         throw err;
-        //     }
-        // }else{
-            let returnObject = {};
-            try{
-                let response = await TpEpCoreRepository.assembleChargeAttempt(msisdn, packageObj, transaction_id, subscription, micro_price);
-                if(response.message === "Success"){
-                    returnObject.message = "Success";
-                    returnObject.api_response = response;
-                }else{
-                    returnObject.message = "Failed";
-                    returnObject.api_response = response;
-                }
-                return returnObject;
-            }catch(err){
-                if(err && err.response){
-                    console.log('Error Micro', err.response.data);
-                }
-                throw err;
-            }
-        // }
     }
 
     async sendAffiliationCallback(tid, mid, user_id, subscription_id, subscriber_id, package_id, paywall_id) {
