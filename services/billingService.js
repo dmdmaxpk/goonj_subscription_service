@@ -122,14 +122,13 @@ class BillingService{
         await this.billingHistoryRepository.createBillingHistory(history);
     }
 
-    async sendAffiliationCallback(tid, mid, user_id, subscription_id, subscriber_id, package_id, paywall_id) {
+    async sendAffiliationCallback(tid, mid, user_id, subscription_id, package_id, paywall_id) {
         let combinedId = tid + "*" +mid;
 
         let history = {};
         history.user_id = user_id;
         history.paywall_id = paywall_id;
         history.subscription_id = subscription_id;
-        history.subscriber_id = subscriber_id;
         history.package_id = package_id;
         history.transaction_id = combinedId;
         history.operator = 'telenor';
@@ -141,14 +140,14 @@ class BillingService{
                 console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
                 history.operator_response = fulfilled;
                 history.billing_status = "Affiliate callback sent";
-                // await  addHistory(history);
+                await this.billingHistoryRepository.createBillingHistory(history);
             }
         })
         .catch(async  (error) => {
             console.log(`Affiliate - Marketing - Callback - Error - Having TID - ${tid} - MID ${mid}`, error);
             history.operator_response = error.response.data;
             history.billing_status = "Affiliate callback error";
-            // await  addHistory(history);
+            await this.billingHistoryRepository.createBillingHistory(history);
         });
     }
 

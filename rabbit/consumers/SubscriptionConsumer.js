@@ -1,18 +1,19 @@
 const config = require('../../config');
-const { rabbitMq } = require('../RabbitMq');
+const moment = require('moment');
 const helper = require('../../helper/helper');
-const constants = require('../../configurations/constants');
-
+const  _ = require('lodash');
 
 class SubscriptionConsumer {
 
-    constructor(subscriptionRepository, messageRepository, tpEpCoreRepository) {
-      this.subscriptionRepository = subscriptionRepository;
-      this.messageRepository = messageRepository;
-      this.tpEpCoreRepository = tpEpCoreRepository;
+    constructor({subscriptionRepository,billingHistoryRepository,messageRepository,billingService,constants}) {
+        this.subscriptionRepository = subscriptionRepository;
+        this.billingHistoryRepo = billingHistoryRepository;
+        this.messageRepo = messageRepository;
+        this.billingService = billingService;
+        this.constants = constants;
     }
 
-    async consume(message, acknowledged = false) {
+    async consume(message) {
         let messageObject = JSON.parse(message.content);
 
         let user = messageObject.user;
@@ -20,187 +21,258 @@ class SubscriptionConsumer {
         let subscription = messageObject.subscription;
         let mcDetails = messageObject.mcDetails;
         let transaction_id = messageObject.transaction_id;
+        let returnObject = messageObject.returnObject;
 
-        let micro_price = 0;
-        let micro_charge = (mcDetails && mcDetails.micro_charge === true) ? true : false;
-        if(micro_charge){
-            micro_price = mcDetails.micro_price;
+
+        if(returnObject){
+            let returnStatus = returnObject.status;
+            let response_time = 0;
+            if (returnObject.hasOwnProperty('api_response_time')){
+                response_time = returnObject.api_response_time;
+            }
+
+            if(returnStatus === 'Success'){
+                // Success billing
+                let serverDate = new Date();
+                let localDate = helper.setDateWithTimezone(serverDate);
+                let nextBilling = _.clone(localDate);
+                nextBilling = nextBilling.setHours(nextBilling.getHours() + mPackage.package_duration);
+
+                // Update subscription
+                let subscriptionObj = {};
+                subscriptionObj.subscription_status = 'billed';
+                subscriptionObj.auto_renewal = true;
+                subscriptionObj.is_billable_in_this_cycle = false;
+                subscriptionObj.is_allowed_to_stream = true;
+                subscriptionObj.last_billing_timestamp = localDate;
+                subscriptionObj.next_billing_timestamp = nextBilling;
+                subscriptionObj.amount_billed_today = subscription.amount_billed_today + (mcDetails && mcDetails.micro_charge) ? mcDetails.micro_price : mPackage.price_point_pkr;
+                subscriptionObj.total_successive_bill_counts = ((subscription.total_successive_bill_counts ? subscription.total_successive_bill_counts : 0) + 1);
+                subscriptionObj.consecutive_successive_bill_counts = ((subscription.consecutive_successive_bill_counts ? subscription.consecutive_successive_bill_counts : 0) + 1);
+                subscriptionObj.queued = false;
+                
+                // Fields for micro charging
+                subscriptionObj.try_micro_charge_in_next_cycle = false;
+                subscriptionObj.micro_price_point = 0;
+                subscriptionObj.priority = 0;
+                await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
+                rabbitMq.acknowledge(message);
+
+                // Check for the affiliation callback
+                if(subscription.affiliate_unique_transaction_id && subscription.affiliate_mid &&
+                    subscription.is_affiliation_callback_executed === false &&
+                    subscription.should_affiliation_callback_sent === true){
+                    if((subscription.source === "HE" || subscription.source === "affiliate_web") && subscription.affiliate_mid != "1") {
+                        this.billingService.sendAffiliationCallback(subscription.affiliate_unique_transaction_id, subscription.affiliate_mid, user._id, subscription._id, mPackage._id, mPackage.paywall_id);
+                    }
+                }
+
+                if(mcDetails && mcDetails.micro_charge){
+                    console.log('Micro charge success');
+                    this.sendMicroChargeMessage(user.msisdn, mPackage.display_price_point, mcDetails.micro_price, mPackage.package_name)
+                    this.billingHistoryRepository.assembleBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, true, mcDetails.micro_price);
+                }else{
+                    console.log('Full charge success');
+                    this.sendRenewalMessage(subscription, user.msisdn, mPackage.package_name, mPackage.display_price_point, true, mPackage._id, user._id)
+                    this.billingHistoryRepository.assembleBillingHistory(user, subscription, mPackage, returnObject.api_response, returnStatus, response_time, transaction_id, false, mPackage.price_point_pkr);
+                }
+                
+            }else{
+                await this.assignGracePeriod(subscription, user, mPackage, false, returnObject.api_response, response_time, transaction_id);
+                rabbitMq.acknowledge(message);
+            }
+        }else{
+            console.log('Return object not found!');
+            rabbitMq.acknowledge(message);
+        }
+    }
+
+    // ASSIGN GRACE PERIOD
+    async assignGracePeriod(subscription, user, packageObj, is_manual_recharge, error, response_time, transaction_id) {
+        let expiry_source = undefined;
+
+        let subscriptionObj = {};
+        subscriptionObj.queued = false;
+        let historyStatus;
+    
+        if((subscription.subscription_status === 'billed' || subscription.subscription_status === 'trial') && subscription.auto_renewal === true){
+            // The subscriber is eligible for grace hours, depends on the current subscribed package
+            
+            let nextBillingDate = new Date();
+            nextBillingDate.setHours(nextBillingDate.getHours() + config.time_between_billing_attempts_hours);
+            
+            subscriptionObj.subscription_status = 'graced';
+            subscriptionObj.is_allowed_to_stream = false;
+            subscriptionObj.next_billing_timestamp = nextBillingDate;
+            subscriptionObj.date_on_which_user_entered_grace_period = new Date();
+            subscriptionObj.is_billable_in_this_cycle = false;
+            subscriptionObj.try_micro_charge_in_next_cycle = false;
+            subscriptionObj.micro_price_point = 0;
+            subscriptionObj.priority = 0;
+            
+            historyStatus="graced";
+
+        }else if(subscription.subscription_status === 'graced' && subscription.auto_renewal === true){
+            // Already in grace, check if given time has been passed in grace, stop streaming
+    
+            let nowDate = moment();
+            let timeInGrace = moment.duration(nowDate.diff(subscription.date_on_which_user_entered_grace_period));
+            let hoursSpentInGracePeriod = timeInGrace.asHours();
+            console.log("hoursSpentInGracePeriod",hoursSpentInGracePeriod);
+    
+            if (is_manual_recharge){
+                let message = "You have insufficient amount for Goonj TV subscription. Please recharge your account for watching Live channels on Goonj TV. Stay Safe";
+                this.messageRepo.sendMessageToQueue(message, user.msisdn);
+            }
+    
+            if (hoursSpentInGracePeriod > packageObj.grace_hours){
+                subscriptionObj.subscription_status = 'expired';
+                subscriptionObj.consecutive_successive_bill_counts = 0;
+                subscriptionObj.auto_renewal = false;
+                subscriptionObj.is_allowed_to_stream = false;
+                subscriptionObj.is_billable_in_this_cycle = false;
+                subscriptionObj.try_micro_charge_in_next_cycle = false;
+                subscriptionObj.micro_price_point = 0;
+                subscriptionObj.priority = 0;
+
+                expiry_source = "system-after-grace-end";
+
+                //Send acknowledgement to user
+                let link = 'https://www.goonj.pk/goonjplus/subscribe';
+                let message = 'You package to Goonj TV has expired, click below link to subscribe again.\n'+link;
+                this.messageRepo.sendMessageToQueue(message, user.msisdn);
+                historyStatus = "expired";
+
+            }
+            else if(packageObj.is_micro_charge_allowed === true && hoursSpentInGracePeriod > 8 && hoursSpentInGracePeriod <= 24){
+                console.log("Micro Charging Activated for: ",subscription._id);
+                subscriptionObj.subscription_status = 'graced';
+                historyStatus = "graced";
+
+                subscriptionObj = this.activateMicroCharging(subscription, packageObj, subscriptionObj);
+                console.log("Micro Charging Activated Subscription Object Returned:",subscriptionObj);
+            }
+            else{
+                let nextBillingDate = new Date();
+                nextBillingDate.setHours(nextBillingDate.getHours() + config.time_between_billing_attempts_hours);
+                
+                subscriptionObj.subscription_status = 'graced';
+                subscriptionObj.next_billing_timestamp = nextBillingDate;
+                historyStatus = "graced";
+    
+                //TODO set is_allowed_to_stream to false if 24 hours have passed in grace period
+                let last_billing_timestamp = moment(subscription.last_billing_timestamp);
+                var hours;
+    
+                if (subscription.last_billing_timestamp) {
+                    let now = moment()
+                    let difference = moment.duration(now.diff(last_billing_timestamp));
+                    hours = difference.asHours();
+                } else {
+                    hours = hoursSpentInGracePeriod;
+                }
+                console.log("Hours since last payment", hours);
+                subscriptionObj.try_micro_charge_in_next_cycle = false;
+                subscriptionObj.micro_price_point = 0;
+                subscriptionObj.priority = 0;
+            }
+        }else{
+            historyStatus = "payment request tried, failed due to insufficient balance.";
+            subscriptionObj.auto_renewal = false;
+            subscriptionObj.is_allowed_to_stream = false;
+            subscriptionObj.consecutive_successive_bill_counts = 0;
+            subscriptionObj.try_micro_charge_in_next_cycle = false;
+            subscriptionObj.micro_price_point = 0;
+            subscriptionObj.priority = 0;
+            
+            //Send acknowledgement to user
+            let message = 'You have insufficient balance for Goonj TV, please try again after recharge. Thanks';
+            this.messageRepo.sendMessageToQueue(message, user.msisdn);
+        }
+
+        if(subscriptionObj.try_micro_charge_in_next_cycle === false) {
+            subscriptionObj.is_billable_in_this_cycle = false;
+        }
+
+        subscriptionObj.queued = false;
+        if(historyStatus && historyStatus === 'expired'){
+            subscriptionObj.amount_billed_today = 0;
         }
         
-        if(subscription.active){
-            // billing
-            if(subscription.payment_source){
-                this.acknowledge(message);
-                
-                let subscriptLocal = await this.subscriptionRepository.getSubscription(subscription._id);
-                if(subscriptLocal){
-                        if(micro_charge){
-                            this.tryMicroChargeAttempt(message, mPackage, user, subscription, transaction_id, micro_price);
-                        } else{
-                            this.tryFullChargeAttempt(message, mPackage, user, subscription, transaction_id);
-                        }
-                }
+        await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
+        if(historyStatus){
+            let history = {};
+            history.billing_status = historyStatus;
+            history.user_id = user._id;
+            history.subscription_id = subscription._id;
+            history.subscriber_id = subscription.subscriber_id;
+            history.paywall_id = packageObj.paywall_id;
+            history.package_id = subscription.subscribed_package_id;
+            history.micro_charge = subscription.try_micro_charge_in_next_cycle;
+            history.price = (subscription.try_micro_charge_in_next_cycle)?subscription.micro_price_point:0;
+            history.transaction_id = transaction_id;
+            history.operator = 'telenor';
+            history.response_time = response_time;
+
+            if(expiry_source !== undefined){
+                history.source = expiry_source;
             }
+
+            history.operator_response = error;
+            await this.billingHistoryRepository.createBillingHistory(history);
         }
-        else{
-            console.log(`Subscription ${subscription._id} is not active, skipping this renewal`);
-            this.acknowledge(message);
+    }
+
+    // Activate micro charging
+    activateMicroCharging(subscription, packageObj, subscriptionObj){
+        console.log("activateMicroCharging")
+        let micro_price_points = packageObj.micro_price_points;
+        let current_micro_price_point = subscription.micro_price_point;
+        let tempSubObj  = JSON.parse(JSON.stringify(subscriptionObj));
+
+        if(current_micro_price_point > 0){
+            // It means micro charging attempt had already been tried and was unsuccessful, lets hit on lower price
+            let index = micro_price_points.indexOf(current_micro_price_point);
+            if(index > 0){
+                tempSubObj.try_micro_charge_in_next_cycle = true;
+                tempSubObj.micro_price_point = micro_price_points[--index];
+                tempSubObj.priority = 2;
+            }else if(index === -1){
+                tempSubObj.try_micro_charge_in_next_cycle = true;
+                tempSubObj.micro_price_point = micro_price_points[micro_price_points.length - 1];
+                tempSubObj.priority = 2;
+            }else{
+                tempSubObj.try_micro_charge_in_next_cycle = false;
+                tempSubObj.micro_price_point = 0;
+                tempSubObj.is_billable_in_this_cycle = false;
+                tempSubObj.priority = 0;
+            }
+        }else{
+            // It means micro tying first micro charge attempt
+            tempSubObj.try_micro_charge_in_next_cycle = true;
+            tempSubObj.micro_price_point = micro_price_points[micro_price_points.length - 1];
+            tempSubObj.priority = 2;
         }
+
+        return tempSubObj;
     }
     
-    // CHARGING ATTEMPTS
-    async tryFullChargeAttempt(queueMessage, packageObj, user, subscription, transaction_id) {
-        let returnObject = {};
-        try {
-            let response = await this.tpEpCoreRepository.assembleChargeAttempt(user.msisdn, packageObj, transaction_id, subscription);
-            let api_response = response.api_response.response.data;
-            let message = response.message;
-
-            if(message === 'Success'){
-                console.log("Billing - Success - ", subscription._id);
-                returnObject.status = 'Success';
-                returnObject.api_response = api_response;
-            
-                if((Number(subscription.consecutive_successive_bill_counts)+1)%7 == 0 || (packageObj._id === 'QDfG')){
-                    this.sendRenewalMessage(subscription, user.msisdn, packageObj.package_name, packageObj.display_price_point, true, packageObj._id, user._id);
-                }
-                this.createOrUpdateSubscription(subscription._id, packageObj.price_point_pkr);
-                this.sendSubscriptionResponse(queueMessage, returnObject);
-            }else{
-                // Unsuccess billing. Save tp billing response
-                returnObject.status = 'Failed';
-                returnObject.api_response = api_response;
-                this.sendSubscriptionResponse(queueMessage, returnObject);
-            }
-        }catch(error){
-            if (error && error.response && (error.response.data.errorCode === "500.007.08" || (error.response.data.errorCode === "500.007.05") &&
-                    error.response.data.errorMessage === "Services of the same type cannot be processed at the same time.") ) {
-                // Consider, tps exceeded, noAcknowledge will requeue this record.
-                console.log('Sending back to queue:errorCode:',error.response.data.errorCode,subscription._id);
-                await helper.timeout(300);
-                this.tryFullChargeAttempt(queueMessage, packageObj, user, subscription, transaction_id);
-            }else{
-                if (error.response && error.response.data){
-                    console.log('Error - Billing Failed - '+subscription._id+' - '+ error.response.data.errorMessage);
-                }else {
-                    console.log('Error billing failed: ', error);
-                }
-                returnObject.status = 'Failed';
-                returnObject.api_response = error.response.data;
-
-                this.sendSubscriptionResponse(queueMessage, returnObject);
-            }
-        }
-
-        packageObj = null;
-        queueMessage = null;
-        returnObject = null;
-        user = null;
-        subscription = null;
-        transaction_id =null;
-    }
-    
-    async tryMicroChargeAttempt(queueMessage, packageObj, user, subscription, transaction_id, micro_price) {
-        let returnObject = {};
-        try{
-            console.log(packageObj.price_point_pkr, micro_price);
-            if(micro_price < packageObj.price_point_pkr){
-
-                let response = await this.tpEpCoreRepository.assembleChargeAttempt(user.msisdn, packageObj, transaction_id, subscription, micro_price);
-                let api_response = response.api_response.api_response.data;
-                let message = response.message;
-
-                if(message === 'Success'){
-                    console.log("Micro Charging success for ",subscription._id," for price ",micro_price);
-                    returnObject.status = 'Success';
-                    returnObject.api_response = api_response;
-                    
-                    // Send acknowledgement message
-                    if((Number(subscription.consecutive_successive_bill_counts)+1)%7 == 0 || (packageObj._id === 'QDfG')){
-                        this.sendMicroChargeMessage(user.msisdn, packageObj.price_point_pkr, micro_price, packageObj.package_name);
-                    }
-                    this.createOrUpdateSubscription(subscription._id, packageObj.price_point_pkr);
-                    this.sendSubscriptionResponse(queueMessage, returnObject);
-                }else{
-                    // Unsuccess billing. Save tp billing response
-                    returnObject.status = 'Failed';
-                    returnObject.api_response = api_response;
-                    this.sendSubscriptionResponse(queueMessage, returnObject);
-                }
-            }else{
-
-                //TODO shoot an email
-                let returnObject = {};
-                returnObject.status = 'ExcessiveMicroBilling';
-                returnObject.micro_price = micro_price;
-                returnObject.package_full_price = packageObj.price_point_pkr;
-                this.sendSubscriptionResponse(queueMessage, returnObject);
-            }
-        }catch(error){
-            // Consider, tps exceeded, noAcknowledge will requeue this record.
-            if ( error.response.data.errorCode === "500.007.08" || (error.response.data.errorCode === "500.007.05" &&
-            error.response.data.errorMessage ==="Services of the same type cannot be processed at the same time.") ){
-                console.log('Sending back to queue',error.response.data.errorCode,subscription._id);
-                await helper.timeout(300);
-                this.tryMicroChargeAttempt(queueMessage, packageObj, user, subscription, transaction_id, micro_price);
-            }else {
-                if (error.response && error.response.data){
-                    console.log('Error - Micro Billing Failed - '+subscription._id+' - '+ error.response.data.errorMessage);
-                }else {
-                    console.log('Error micro billing failed: ', error);
-                }
-                // Consider, payment failed for any reason. e.g no credit, number suspended etc
-                returnObject.status = 'Failed';
-                returnObject.api_response = error.response.data;
-
-                // let endTime = new Date() - startTime;
-                // endTime = helper.timeTakeByChargeApi(endTime);
-                // returnObject.api_response_time = endTime;
-
-                this.sendSubscriptionResponse(queueMessage, returnObject);
-            }
-        }
-
-        packageObj = null;
-        queueMessage = null;
-        returnObject = null;
-        user = null;
-        subscription = null;
-        transaction_id =null;
-    }
-
-    async createOrUpdateSubscription(subscriptionId, amount_billed_today) {
-        let subscription = await this.subscriptionRepository.getSubscription(subscriptionId);
-        if (!subscription){
-            let subscriptionObj = {};
-            subscriptionObj.subscription_id = subscriptionId;
-            subscriptionObj.amount_billed_today = Number(amount_billed_today);
-            subscriptionObj.active = true;
-            subscriptionObj.added_dtm = new Date();
-            this.subscriptionRepository.createSubscription(subscriptionObj);
-        }
-        else{
-            let newAmount = Number(subscription.amount_billed_today) + Number(amount_billed_today);
-            this.subscriptionRepository.updateSubscription(subscription._id, {$set: {amount_billed_today: newAmount}});
-        }
-    }
-
     sendRenewalMessage(subscription, msisdn, packageName, price, is_manual_recharge,package_id,user_id) {
-        if(subscription.consecutive_successive_bill_counts + 1 === 1){
+        if(subscription.consecutive_successive_bill_counts === 1){
             // For the first time or every week of consecutive billing
     
             //Send acknowldement to user
-            let message = constants.message_after_first_successful_charge[package_id];
+            let message = this.constants.message_after_first_successful_charge[package_id];
             message = message.replace("%user_id%", user_id)
             message = message.replace("%pkg_id%", package_id)
-            this.messageRepository.sendToQueue(message, msisdn);
-        }else if((Number(subscription.consecutive_successive_bill_counts)+1)%7 == 0 || (package_id === 'QDfG')){
-            // Every week
+            this.messageRepo.sendMessageToQueue(message, msisdn);
+        }else if((subscription.consecutive_successive_bill_counts + 1) % 7 === 0 || (package_id === 'QDfG')){
+                        // Every week
             //Send acknowledgement to user            
-            let message = constants.message_after_repeated_succes_charge[package_id];
+            let message = this.constants.message_after_repeated_succes_charge[package_id];
             message = message.replace("%user_id%", user_id)
             message = message.replace("%pkg_id%", package_id)
-            this.messageRepository.sendToQueue(message, msisdn);
+            // message = message.replace("%price%",price);
         }
     }
     
@@ -211,19 +283,7 @@ class SubscriptionConsumer {
     
         //Send acknowldement to user
         let message = "You've got "+percentage+"% discount on "+packageName+".  Numainday se baat k liye 727200 milayein.";
-        this.messageRepository.sendToQueue(message, msisdn);
-    }
-
-    acknowledge(message){
-        rabbitMq.acknowledge(message);
-    }
-
-    sendSubscriptionResponse(message, returnObject){
-        let messageObj = JSON.parse(message.content);
-        messageObj.returnObject = returnObject;
-
-        rabbitMq.addInQueue(config.queueNames.subscriptionResponseDispatcher, messageObj);
-        console.log('Subscription response added in queue!');
+        this.messageRepo.sendMessageToQueue(message, msisdn);
     }
 }
 

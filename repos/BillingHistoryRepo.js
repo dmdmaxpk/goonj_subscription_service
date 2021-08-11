@@ -8,7 +8,6 @@ class BillingHistoryRepository {
         let history = {};
         history.user_id = user._id;
         history.subscription_id = subscription._id;
-        history.subscriber_id = subscription.subscriber_id;
         history.paywall_id = packageObj.paywall_id;
         history.package_id = subscription.subscribed_package_id;
         history.transaction_id = transaction_id;

@@ -37,33 +37,6 @@ class TpEpCoreRepository{
             return err
         })
     }
-
-    async assembleChargeAttempt(msisdn, packageObj, transaction_id, subscription, micro_price){
-        let user = {}
-        user.msisdn = msisdn;
-        packageObj.price = micro_price ? micro_price : packageObj.price;
-        // let response = await this.processDirectBilling(undefined, user, subscription, packageObj, false)
-        // return response;
-
-
-        let returnObject = {};
-        try{
-            let response = await this.processDirectBilling(undefined, user, subscription, packageObj, false);
-            if(response.message === "Success"){
-                returnObject.message = "Success";
-                returnObject.api_response = response;
-            }else{
-                returnObject.message = "Failed";
-                returnObject.api_response = response;
-            }
-            return returnObject;
-        }catch(err){
-            if(err && err.response){
-                console.log('Error Micro', err.response.data);
-            }
-            throw err;
-        }
-    }
 }
 
 module.exports = TpEpCoreRepository;
