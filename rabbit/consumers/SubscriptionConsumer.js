@@ -2,9 +2,6 @@ const config = require('../../config');
 const moment = require('moment');
 const helper = require('../../helper/helper');
 const  _ = require('lodash');
-const Singleton = require('../RabbitMq');
-// const RabbitMq = require('../RabbitMq');
-// const Singleton = new RabbitMq().getInstance();
 class SubscriptionConsumer {
 
     constructor({subscriptionRepository,billingHistoryRepository,messageRepository,billingService,constants}) {
@@ -63,7 +60,7 @@ class SubscriptionConsumer {
                 subscriptionObj.micro_price_point = 0;
                 // subscriptionObj.priority = 0;
                 await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
-                Singleton.acknowledge(message);
+                rabbitMq.acknowledge(message);
 
                 // Check for the affiliation callback
                 if(subscription.affiliate_unique_transaction_id && subscription.affiliate_mid &&
@@ -86,11 +83,11 @@ class SubscriptionConsumer {
                 
             }else{
                 await this.assignGracePeriod(subscription, user, mPackage, false, returnObject, response_time, transaction_id);
-                Singleton.acknowledge(message);
+                rabbitMq.acknowledge(message);
             }
         }else{
             console.log('Return object not found!');
-            Singleton.acknowledge(message);
+            rabbitMq.acknowledge(message);
         }
     }
 

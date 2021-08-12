@@ -1,6 +1,7 @@
 const config = require('../config');
 const amqp = require('amqplib/callback_api');
 
+var rabbitMq;
 class RabbitMq {
     constructor() {
         this.connection = null;
@@ -74,18 +75,26 @@ class RabbitMq {
         let buffer = Buffer.from(JSON.stringify(message));
         this.channel.sendToQueue(queue, buffer, {persistent:true});
     }
-}  
+}
 
-class Singleton {
-    constructor() {
-        if (!Singleton.instance) {
-            Singleton.instance = new RabbitMq();
-        }
-    }
+if(!rabbitMq){
+    rabbitMq = new RabbitMq();
+}
+
+module.exports = {
+    rabbitMq: rabbitMq
+};
+
+// class Singleton {
+//     constructor() {
+//         if (!Singleton.instance) {
+//             Singleton.instance = new RabbitMq();
+//         }
+//     }
   
-    getInstance() {
-        return Singleton.instance;
-    }
-  }
+//     getInstance() {
+//         return Singleton.instance;
+//     }
+//   }
 
-module.exports = Singleton;
+// module.exports = Singleton;
