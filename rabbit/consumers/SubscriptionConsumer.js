@@ -2,6 +2,7 @@ const config = require('../../config');
 const moment = require('moment');
 const helper = require('../../helper/helper');
 const  _ = require('lodash');
+const {rabbitMq} = require('../RabbitMq');
 class SubscriptionConsumer {
 
     constructor({subscriptionRepository,billingHistoryRepository,messageRepository,billingService,constants}) {
