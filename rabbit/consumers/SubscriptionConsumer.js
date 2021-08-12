@@ -7,8 +7,8 @@ class SubscriptionConsumer {
 
     constructor({subscriptionRepository,billingHistoryRepository,messageRepository,billingService,constants}) {
         this.subscriptionRepository = subscriptionRepository;
-        this.billingHistoryRepo = billingHistoryRepository;
-        this.messageRepo = messageRepository;
+        this.billingHistoryRepository = billingHistoryRepository;
+        this.messageRepository = messageRepository;
         this.billingService = billingService;
         this.constants = constants;
     }
@@ -127,7 +127,7 @@ class SubscriptionConsumer {
     
             if (is_manual_recharge){
                 let message = "You have insufficient amount for Goonj TV subscription. Please recharge your account for watching Live channels on Goonj TV. Stay Safe";
-                this.messageRepo.sendMessageToQueue(message, user.msisdn);
+                this.messageRepository.sendMessageToQueue(message, user.msisdn);
             }
     
             if (hoursSpentInGracePeriod > packageObj.grace_hours){
@@ -145,7 +145,7 @@ class SubscriptionConsumer {
                 //Send acknowledgement to user
                 let link = 'https://www.goonj.pk/goonjplus/subscribe';
                 let message = 'You package to Goonj TV has expired, click below link to subscribe again.\n'+link;
-                this.messageRepo.sendMessageToQueue(message, user.msisdn);
+                this.messageRepository.sendMessageToQueue(message, user.msisdn);
                 historyStatus = "expired";
 
             }
@@ -192,7 +192,7 @@ class SubscriptionConsumer {
             
             //Send acknowledgement to user
             let message = 'You have insufficient balance for Goonj TV, please try again after recharge. Thanks';
-            this.messageRepo.sendMessageToQueue(message, user.msisdn);
+            this.messageRepository.sendMessageToQueue(message, user.msisdn);
         }
 
         if(subscriptionObj.try_micro_charge_in_next_cycle === false) {
@@ -223,7 +223,7 @@ class SubscriptionConsumer {
                 subscription.source = expiry_source;
             }
 
-            await this.assembleBillingHistory(user, subscription, packageObj, error, historyStatus, response_time, transaction_id, subscription.try_micro_charge_in_next_cycle, subscription.try_micro_charge_in_next_cycle ? subscription.micro_price_point : 0)
+            await this.billingHistoryRepository.assembleBillingHistory(user, subscription, packageObj, error, historyStatus, response_time, transaction_id, subscription.try_micro_charge_in_next_cycle, subscription.try_micro_charge_in_next_cycle ? subscription.micro_price_point : 0)
         }
     }
 
@@ -269,7 +269,7 @@ class SubscriptionConsumer {
             let message = this.constants.message_after_first_successful_charge[package_id];
             message = message.replace("%user_id%", user_id)
             message = message.replace("%pkg_id%", package_id)
-            this.messageRepo.sendMessageToQueue(message, msisdn);
+            this.messageRepository.sendMessageToQueue(message, msisdn);
         }else if((subscription.consecutive_successive_bill_counts + 1) % 7 === 0 || (package_id === 'QDfG')){
                         // Every week
             //Send acknowledgement to user            
@@ -287,7 +287,7 @@ class SubscriptionConsumer {
     
         //Send acknowldement to user
         let message = "You've got "+percentage+"% discount on "+packageName+".  Numainday se baat k liye 727200 milayein.";
-        this.messageRepo.sendMessageToQueue(message, msisdn);
+        this.messageRepository.sendMessageToQueue(message, msisdn);
     }
 }
 
