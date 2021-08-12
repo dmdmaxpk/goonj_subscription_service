@@ -63,7 +63,7 @@ class RabbitMq {
     }
 
     acknowledge(message){
-        this.channel.nack(message);
+        this.channel.ack(message);
     }
 
     noAcknowledge(message){
