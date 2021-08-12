@@ -39,6 +39,9 @@ const queueNames = {
     billingHistoryDispatcher: 'billingHistoryDispatcher'
 }
 
+// variables
+const time_between_billing_attempts_hours = 4;
+
 //Ideation Url
 const Ideation_call_back_url = 'http://bpd.o18.click/';
 const Ideation_call_back_url_2 = 'http://210.56.13.190/goonj_callback.php/';
@@ -53,6 +56,7 @@ let config = {
         codes: codes,
         servicesUrls: servicesUrls,
         rabbitMqConnectionString: rabbitMqConnectionString,
+        time_between_billing_attempts_hours: time_between_billing_attempts_hours,
         Ideation_call_back_url: Ideation_call_back_url,
         Ideation_call_back_url_2: Ideation_call_back_url_2,
         Ideation_call_back_url_3: Ideation_call_back_url_3
@@ -64,6 +68,7 @@ let config = {
         codes: codes,
         servicesUrls: servicesUrls,
         rabbitMqConnectionString: rabbitMqConnectionString,
+        time_between_billing_attempts_hours: time_between_billing_attempts_hours,
         Ideation_call_back_url: Ideation_call_back_url,
         Ideation_call_back_url_2: Ideation_call_back_url_2,
         Ideation_call_back_url_3: Ideation_call_back_url_3
@@ -75,6 +80,7 @@ let config = {
         codes: codes,
         servicesUrls: servicesUrls,
         rabbitMqConnectionString: rabbitMqConnectionString,
+        time_between_billing_attempts_hours: time_between_billing_attempts_hours,
         Ideation_call_back_url: Ideation_call_back_url,
         Ideation_call_back_url_2: Ideation_call_back_url_2,
         Ideation_call_back_url_3: Ideation_call_back_url_3

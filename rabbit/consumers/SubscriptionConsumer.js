@@ -205,24 +205,24 @@ class SubscriptionConsumer {
         
         await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
         if(historyStatus){
-            let history = {};
-            history.billing_status = historyStatus;
-            history.user_id = user._id;
-            history.subscription_id = subscription._id;
-            history.paywall_id = packageObj.paywall_id;
-            history.package_id = subscription.subscribed_package_id;
-            history.micro_charge = subscription.try_micro_charge_in_next_cycle;
-            history.price = (subscription.try_micro_charge_in_next_cycle)?subscription.micro_price_point:0;
-            history.transaction_id = transaction_id;
-            history.operator = 'telenor';
-            history.response_time = response_time;
+            // let history = {};
+            // history.billing_status = historyStatus;
+            // history.user_id = user._id;
+            // history.subscription_id = subscription._id;
+            // history.paywall_id = packageObj.paywall_id;
+            // history.package_id = subscription.subscribed_package_id;
+            // history.micro_charge = subscription.try_micro_charge_in_next_cycle;
+            // history.price = (subscription.try_micro_charge_in_next_cycle)?subscription.micro_price_point:0;
+            // history.transaction_id = transaction_id;
+            // history.operator = 'telenor';
+            // history.response_time = response_time;
+            // history.operator_response = error;
 
             if(expiry_source !== undefined){
-                history.source = expiry_source;
+                subscription.source = expiry_source;
             }
 
-            history.operator_response = error;
-            await this.billingHistoryRepository.createBillingHistory(history);
+            await this.assembleBillingHistory(user, subscription, packageObj, error, historyStatus, response_time, transaction_id, subscription.try_micro_charge_in_next_cycle, subscription.try_micro_charge_in_next_cycle ? subscription.micro_price_point : 0)
         }
     }
 
