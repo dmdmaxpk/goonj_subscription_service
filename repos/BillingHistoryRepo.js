@@ -1,7 +1,7 @@
 const Axios = require('axios');
 const config = require('../config');
-const {rabbitMq} = require('../rabbit/RabbitMq');
-// const rabbitMq = new RabbitMq().getInstance();
+const RabbitMq = require('../rabbit/RabbitMq');
+const rabbitMq = new RabbitMq().getInstance();
 
 class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {

@@ -19,8 +19,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 // Import routes
 app.use('/', require('./routes/index'));
 
-const {rabbitMq} = require('./rabbit/RabbitMq');
-// const rabbitMq = new RabbitMq().getInstance();
+const RabbitMq = require('./rabbit/RabbitMq');
+const rabbitMq = new RabbitMq().getInstance();
 
 const container = require('./configurations/container');
 const subscriptionConsumer = container.resolve("subscriptionConsumer");
