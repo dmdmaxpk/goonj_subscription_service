@@ -14,7 +14,8 @@ class SubscriptionConsumer {
     }
 
     async consume(message) {
-        let messageObject = JSON.parse(message.content);
+        // let messageObject = JSON.parse(message.content);
+        let messageObject = message;
         console.log("warning", "response dispatcher", messageObject);
         let user = messageObject.user;
         let mPackage = messageObject.package;
