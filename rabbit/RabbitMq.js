@@ -58,7 +58,7 @@ class RabbitMq {
           }, {
             //It's time to turn manual acnkowledgments on using the {noAck: false} option and send a 
             // proper acknowledgment from the worker, once we're done with a task.
-            noAck: true
+            noAck: false
         });
     }
 
