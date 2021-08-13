@@ -63,6 +63,7 @@ class RabbitMq {
     }
 
     acknowledge(message){
+        console.log("ack message", message);
         this.channel.ack(message);
     }
 

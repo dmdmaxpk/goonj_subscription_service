@@ -62,6 +62,7 @@ class SubscriptionConsumer {
                 subscriptionObj.micro_price_point = 0;
                 // subscriptionObj.priority = 0;
                 await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
+                console.log(1);
                 rabbitMq.acknowledge(message);
 
                 // Check for the affiliation callback
@@ -85,10 +86,12 @@ class SubscriptionConsumer {
                 
             }else{
                 await this.assignGracePeriod(subscription, user, mPackage, false, returnObject, response_time, transaction_id);
+                console.log(2);
                 rabbitMq.acknowledge(message);
             }
         }else{
             console.log('Return object not found!');
+            console.log(3);
             rabbitMq.acknowledge(message);
         }
     }
