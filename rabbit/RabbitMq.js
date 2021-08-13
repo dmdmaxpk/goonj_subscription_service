@@ -53,6 +53,7 @@ class RabbitMq {
     }
 
     consumeQueue(queue, callback){
+        console.log("consume func channel", this.channel);
         this.channel.consume(queue, async (msg) =>  {
             callback(msg);
           }, {
@@ -63,7 +64,7 @@ class RabbitMq {
     }
 
     acknowledge(message){
-        console.log("ack message", message);
+        console.log("ack func channel", this.channel);
         this.channel.ack(message);
     }
 
