@@ -53,18 +53,16 @@ class RabbitMq {
     }
 
     consumeQueue(queue, callback){
-        console.log("consume func channel", this.channel);
         this.channel.consume(queue, async (msg) =>  {
             callback(msg);
           }, {
             //It's time to turn manual acnkowledgments on using the {noAck: false} option and send a 
             // proper acknowledgment from the worker, once we're done with a task.
-            noAck: false
+            // noAck: false
         });
     }
 
     acknowledge(message){
-        console.log("ack func channel", this.channel);
         this.channel.ack(message);
     }
 
