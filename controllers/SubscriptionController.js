@@ -142,15 +142,15 @@ exports.subscribe = async (req, res) => {
 	// billingRepository.sendMessage('Lorem Ipsum is simply dummy text of the printing. Lorem Ipsum  standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen', '03476733767')
 
 	let gw_transaction_id = req.body.transaction_id;
-	// let decoded = await coreRepo.getDecoded(req);
-	// console.log("decoded", decoded)
-	// let decodedUser = decoded.decoded;
+	let decodedResponse = await coreRepo.getDecoded(req);
+	console.log("decoded: ", decodedResponse)
+	let decodedUser = decodedResponse.decoded;
 
-	// if(decodedUser && decodedUser.msisdn){
+	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
-		// let msisdn = decodedUser.msisdn;
+		let msisdn = decodedUser.msisdn;
 	
-		let msisdn = req.body.msisdn;
+		// let msisdn = req.body.msisdn;
 		console.log("Decoded Msisdn: ", msisdn);
 		let user = await userRepo.getUserByMsisdn(msisdn);
 		if(!user){
@@ -199,7 +199,8 @@ exports.subscribe = async (req, res) => {
 				doSubscribe(req, res, user, gw_transaction_id);
 			}
 		}
-	// }else{
+	}
+	// else{
 	// 	console.log('No decoded user present');
 	// 	res.send({code: config.codes.code_error, message: "Authentication Failure", gw_transaction_id: gw_transaction_id});
 	// }
