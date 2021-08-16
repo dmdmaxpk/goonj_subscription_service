@@ -48,8 +48,7 @@ class CoreRepository{
     }
 
     async getDecoded(req){
-        console.log("request obj", req)
-        return await Axios.post(`${config.servicesUrls.core_service}/auth/authenticate`, {req})
+        return await Axios.post(`${config.servicesUrls.core_service}/auth/authenticate`, {body: req.body, headers: req.headers})
         .then(res =>{ 
             let result = res.data;
             console.log("decoded", result);
