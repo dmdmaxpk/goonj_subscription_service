@@ -2,8 +2,6 @@ const awilix = require('awilix');
 const container = awilix.createContainer({
     injectionMode: awilix.InjectionMode.PROXY
 });
-// Queue Consumers
-const SubscriberQueryConsumer = require("../rabbit/consumers/SubscriptionConsumer");
 // Repositories
 const SubscriptionRepository = require('../repos/SubscriptionRepo');
 const BillingHistoryRepo = require('../repos/BillingHistoryRepo');
@@ -20,8 +18,6 @@ const Constants = require('./constants');
 
 container.register({
     // Here we are telling Awilix how to resolve 
-    // Consumers 
-    subscriptionConsumer: awilix.asClass(SubscriberQueryConsumer).singleton(),
     // Repositories 
     subscriptionRepository: awilix.asClass(SubscriptionRepository).singleton(),
     billingHistoryRepository: awilix.asClass(BillingHistoryRepo).singleton(),

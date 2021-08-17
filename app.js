@@ -23,7 +23,6 @@ const RabbitMq = require('./rabbit/RabbitMq');
 const rabbitMq = new RabbitMq().getInstance();
 
 const container = require('./configurations/container');
-const subscriptionConsumer = container.resolve("subscriptionConsumer");
 
 // Start Server
 let { port } = config;
@@ -35,11 +34,6 @@ app.listen(port, () => {
         }else{
             console.log('RabbitMq status', response);
             try{
-                // consume
-                rabbitMq.consumeQueue(config.queueNames.subscriptionResponseDispatcher, async(message) => {
-                    await subscriptionConsumer.consume(JSON.parse(message.content))
-                    rabbitMq.acknowledge(message);
-                });
             }catch(error){
                 console.error(error.message);
             }
