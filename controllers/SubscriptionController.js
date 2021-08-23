@@ -549,7 +549,7 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 			}
 			subscriptionObj.subscribed_package_id = packageObj._id;
 			console.log("otp", otp)
-			let result = await tpEpCoreRepo.processDirectBilling(subscriptionObj.ep_token ? undefined : otp, user, subscriptionObj, packageObj, true);
+			let result = await tpEpCoreRepo.processDirectBilling(subscriptionObj.ep_token ? undefined : otp, user, subscriptionObj, packageObj, true, true);
 			if(result.message === "success"){
 				dataToReturn.status = "charged";
 				dataToReturn.subscriptionObj = subscriptionObj;
