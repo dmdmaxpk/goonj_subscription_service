@@ -17,9 +17,9 @@ class TpEpCoreRepository{
             let response = res.data;
 
             console.log("warning", "resonpse obj", response)
-            if(response && response.message === "success"){
+            if(response.message === "success"){
                 this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time);
-            }else{
+            }else if(response.message === 'failed'){
                 this.billingService.billingFailed(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time);
             }
             return response
