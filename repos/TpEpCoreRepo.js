@@ -10,11 +10,13 @@ class TpEpCoreRepository{
     async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing){
         let transaction_id = subscriptionObj.payment_source == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + '_' + nanoid(10);
         let ep_token = subscriptionObj.ep_token ? subscriptionObj.ep_token : undefined;
-        console.log("warning", "packageObj", packageObj)
+        console.log("warning", "attempting charging packageObj", packageObj.price_point_pkr)
+
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: packageObj.partner_id, ep_token})
         .then(res =>{ 
             let response = res.data;
 
+            console.log("warning", "resonpse obj", response)
             if(response && response.message === "success"){
                 this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time);
             }else{
