@@ -13,7 +13,7 @@ class TpEpCoreRepository{
         console.log("warning", "attempting charging packageObj", packageObj.price_point_pkr)
 
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: packageObj.partner_id, ep_token})
-        .then(res =>{ 
+        .then(async(res) =>{ 
             let response = res.data;
 
             console.log("warning", "resonpse obj", response)
