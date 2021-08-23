@@ -10,7 +10,7 @@ class BillingService{
     }
 
     // billing functions
-    async billingSuccess(user, subscription, response, packageObj, transaction_id, first_time_billing){
+    async billingSuccess(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time){
 
         let serverDate = new Date();
         let localDate = Helper.setDateWithTimezone(serverDate);
@@ -89,7 +89,8 @@ class BillingService{
         history.paywall_id = packageObj.paywall_id;
         history.package_id = packageObj._id;
         history.transaction_id = transaction_id;
-        history.operator_response = response;
+        history.operator_response = response.full_api_response;
+        history.response_time = response_time;
         history.price = packageObj.price_point_pkr;
         history.billing_status = "Success";
         history.source = subscription.source;
@@ -97,7 +98,7 @@ class BillingService{
         await this.billingHistoryRepository.createBillingHistory(history);
     }
 
-    async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing){
+    async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time){
         console.log("billing failed: subscription obj", subscription._id, 'first_time_billing', first_time_billing);
 
         let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id);
@@ -111,12 +112,14 @@ class BillingService{
         // Add history record
         let history = {};
         history.user_id = user._id;
+        history.price = packageObj.price_point_pkr;
         history.source = subscription.source ? subscription.source : checkSubscription.source;
         history.subscription_id = checkSubscription._id;
         history.paywall_id = packageObj.paywall_id;
         history.package_id = packageObj._id;
         history.transaction_id = transaction_id;
-        history.operator_response = response;
+        history.operator_response = response.full_api_response;
+        history.response_time = response_time;
         history.billing_status = first_time_billing ? "direct-billing-tried-but-failed" : "switch-package-request-tried-but-failed";
         history.operator = subscription.payment_source;
         await this.billingHistoryRepository.createBillingHistory(history);
