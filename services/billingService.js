@@ -99,7 +99,7 @@ class BillingService{
     }
 
     async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time){
-        console.log("success", "billing failed: package obj", packageObj);
+        console.log("success", "billing failed: package obj", packageObj.price_point_pkr);
 
         let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id);
         if(checkSubscription === null){
