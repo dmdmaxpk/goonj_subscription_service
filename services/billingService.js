@@ -112,7 +112,7 @@ class BillingService{
         // Add history record
         let history = {};
         history.user_id = user._id;
-        history.micro_charge = micro ? micro : false;
+        history.micro_charge = micro !== undefined ? micro : false;
         history.price = packageObj.price_point_pkr;
         history.source = subscription.source ? subscription.source : checkSubscription.source;
         history.subscription_id = checkSubscription._id;
