@@ -10,7 +10,7 @@ class BillingService{
     }
 
     // billing functions
-    async billingSuccess(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time){
+    async billingSuccess(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time, micro){
 
         let serverDate = new Date();
         let localDate = Helper.setDateWithTimezone(serverDate);
@@ -98,7 +98,7 @@ class BillingService{
         await this.billingHistoryRepository.createBillingHistory(history);
     }
 
-    async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time){
+    async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time, micro){
         console.log("success", "billing failed: package obj", packageObj.price_point_pkr);
 
         let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id);
@@ -112,6 +112,7 @@ class BillingService{
         // Add history record
         let history = {};
         history.user_id = user._id;
+        history.micro_charge = micro ? micro : false;
         history.price = packageObj.price_point_pkr;
         history.source = subscription.source ? subscription.source : checkSubscription.source;
         history.subscription_id = checkSubscription._id;

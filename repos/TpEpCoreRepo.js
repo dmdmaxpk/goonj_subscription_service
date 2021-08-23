@@ -7,7 +7,7 @@ class TpEpCoreRepository{
         this.billingService = billingService;
     }
     
-    async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing){
+    async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing, micro){
         let transaction_id = subscriptionObj.payment_source == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + '_' + nanoid(10);
         let ep_token = subscriptionObj.ep_token ? subscriptionObj.ep_token : undefined;
         console.log("warning", "attempting charging packageObj", packageObj.price_point_pkr)
@@ -18,9 +18,9 @@ class TpEpCoreRepository{
 
             console.log("warning", "resonpse obj", response)
             if(response.message === "success"){
-                await this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time);
+                await this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
             }else if(response.message === 'failed'){
-                await this.billingService.billingFailed(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time);
+                await this.billingService.billingFailed(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
             }
             return response
         })
