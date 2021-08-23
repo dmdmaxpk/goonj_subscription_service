@@ -13,7 +13,8 @@ class TpEpCoreRepository{
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: packageObj.partner_id, ep_token})
         .then(res =>{ 
             let response = res.data;
-            // console.log("billing response", response)
+
+            console.log("warning", "billing response", response)
 
             if(response && response.message === "success"){
                 this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response_time);
