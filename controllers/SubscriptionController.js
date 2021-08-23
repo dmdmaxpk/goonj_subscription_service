@@ -221,7 +221,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						if(packageObj._id === 'QDfC' && (req.body.affiliate_mid === 'gdn' || req.body.affiliate_mid === 'gdn1' || req.body.affiliate_mid === 'gdn2' || req.body.affiliate_mid === 'gdn3')){
 							try {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
-								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
 									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
@@ -239,7 +238,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						}else if (req.body.affiliate_mid === '1569' || req.body.affiliate_mid === 'aff3a' || req.body.affiliate_mid === 'aff3' || req.body.affiliate_mid === 'goonj' || req.body.affiliate_mid === 'tp-gdn'){
 							try {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
-								console.log("Direct Billing processed",result,user.msisdn);
 								if(result && result.message === "success"){
 									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
@@ -257,7 +255,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						}else{
 							// Live paywall, subscription rules along with micro changing started
 							let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
-							console.log("subsResponse", subsResponse);
 							if(subsResponse && subsResponse.status === "charged"){
 								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
  
@@ -281,7 +278,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					// comedy paywall
 					try {
 						let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
-						console.log("Direct Billing processed",result,user.msisdn);
 						if(result.message === "success"){
 							res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', 
 										gw_transaction_id: gw_transaction_id});
@@ -380,7 +376,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										try {
 											subscription.payment_source = req.body.payment_source;
 											let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
-											console.log("result",result,user.msisdn);
 											if(result.message === "success"){
 												res.send({code: config.codes.code_success, message: 'Subscribed Successfully', gw_transaction_id: gw_transaction_id});
 											}else{
@@ -405,7 +400,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									try {
 										subscription.payment_source = req.body.payment_source;
 										let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
-										console.log("result direct billing - ",result,user.msisdn);
 										if(result.message === "success"){
 											res.send({code: config.codes.code_success, message: 'Subscribed Successfully chance', gw_transaction_id: gw_transaction_id});
 										}else{
@@ -556,7 +550,6 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 			subscriptionObj.subscribed_package_id = packageObj._id;
 			console.log("otp", otp)
 			let result = await tpEpCoreRepo.processDirectBilling(subscriptionObj.ep_token ? undefined : otp, user, subscriptionObj, packageObj, true);
-			console.log("Direct billing processed with status ", result.message);
 			if(result.message === "success"){
 				dataToReturn.status = "charged";
 				dataToReturn.subscriptionObj = subscriptionObj;
