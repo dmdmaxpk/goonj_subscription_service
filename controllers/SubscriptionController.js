@@ -15,7 +15,7 @@ const helper = require('../helper/helper');
 const  _ = require('lodash');
 
 exports.getSubscriptionDetails = async(req, res) => {
-	let { msisdn,transaction_id } = req.query;
+	let { msisdn, gw_transaction_id } = req.query;
 	console.log(req.query)
 	let obj = {};
 	if (msisdn) {
@@ -41,15 +41,15 @@ exports.getSubscriptionDetails = async(req, res) => {
 					obj.subscriptions = subscriptions;
 					let expiryArray = await getExpiry(user._id);
 					obj.expiry = expiryArray;
-					res.send({code: config.codes.code_success, data: obj,gw_transaction_id:transaction_id});
+					res.send({code: config.codes.code_success, data: obj,gw_transaction_id:gw_transaction_id});
 				}else{
-					res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:transaction_id});
+					res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:gw_transaction_id});
 				}
 		}else{
-			res.send({code: config.codes.code_data_not_found, message: 'User not found',gw_transaction_id:transaction_id});
+			res.send({code: config.codes.code_data_not_found, message: 'User not found',gw_transaction_id:gw_transaction_id});
 		}
 	} else {
-		res.send({code: config.codes.code_invalid_data_provided, message: 'No msisdn provided',gw_transaction_id:transaction_id});
+		res.send({code: config.codes.code_invalid_data_provided, message: 'No msisdn provided',gw_transaction_id:gw_transaction_id});
 	}
 }
 
@@ -141,7 +141,7 @@ login = async(user_id) => {
 exports.subscribe = async (req, res) => {
 	// billingRepository.sendMessage('Lorem Ipsum is simply dummy text of the printing. Lorem Ipsum  standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen', '03476733767')
 
-	let gw_transaction_id = req.body.transaction_id;
+	let gw_transaction_id = req.body.gw_transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
 	console.log("decoded: ", decodedResponse)
 	let decodedUser = decodedResponse.decoded;
@@ -697,7 +697,6 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 }
 
 reSubscribe = async(subscription, history) => {
-
 	let dataToUpdate = {};
 	dataToUpdate.auto_renewal = true;
 	dataToUpdate.subscription_status = "billed";
@@ -711,7 +710,7 @@ reSubscribe = async(subscription, history) => {
 }
 
 exports.recharge = async (req, res) => {
-	let gw_transaction_id = req.body.transaction_id;
+	let gw_transaction_id = req.body.gw_transaction_id;
 
 	let user_id = req.body.uid;
 	let msisdn = req.body.msisdn;
@@ -758,7 +757,7 @@ exports.recharge = async (req, res) => {
 
 // Check status
 exports.status = async (req, res) => {
-	let gw_transaction_id = req.body.transaction_id;
+	let gw_transaction_id = req.body.gw_transaction_id;
 	let user = undefined;
 
 	let msisdn = req.body.msisdn;
@@ -813,7 +812,7 @@ exports.status = async (req, res) => {
 }
 
 exports.getAllSubscriptions = async (req, res) => {
-	let gw_transaction_id = req.query.transaction_id;
+	let gw_transaction_id = req.query.gw_transaction_id;
 	let msisdn = req.query.msisdn;
 	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
@@ -871,7 +870,7 @@ exports.delete = async (req, res) => {
 
 // UnSubscribe
 exports.unsubscribe = async (req, res) => {
-	let gw_transaction_id = req.body.transaction_id;
+	let gw_transaction_id = req.body.gw_transaction_id;
 	
 	let user;
 	let msisdn = req.body.msisdn;
