@@ -8,7 +8,6 @@ const userRepo = container.resolve("userRepository");
 const billingHistoryRepo = container.resolve("billingHistoryRepository");
 const tpEpCoreRepo = container.resolve("tpEpCoreRepository");
 
-const shortId = require('shortid');
 const constants = container.resolve("constants");
 
 const helper = require('../helper/helper');
@@ -26,7 +25,6 @@ exports.getSubscriptionDetails = async(req, res) => {
 				if(rawSubscriptions){
 					for(let i = 0; i < rawSubscriptions.length; i++){
 						let sub = {};
-						//sub.user_id = user._id;
 						sub.user_id = rawSubscriptions[i].user_id;
 						sub.subscription_id = rawSubscriptions[i]._id;
 						sub.paywall_id = rawSubscriptions[i].paywall_id;
@@ -105,42 +103,8 @@ login = async(user_id) => {
 	
 }
 
-
-
-// payment Controller methods moved here
-
-// subscribePackage = async(subscription, packageObj) => {
-
-// 	let user = await subscriptionRepo.getUserBySubscriptionId(subscription._id);
-// 	let transactionId = "Goonj_"+user.msisdn+"_"+packageObj._id+"_"+shortId.generate()+"_"+getCurrentDate();
-	
-// 	let subscriptionObj = {};
-// 	subscriptionObj.user = user;
-// 	subscriptionObj.packageObj = packageObj;
-// 	subscriptionObj.subscription = subscription;
-// 	subscriptionObj.transactionId = transactionId;
-
-// 	// Add object in queueing server
-// 	console.log("Add in queueing server",subscriptionObj);
-// 	if (subscription.queued === false && subscriptionObj.user && subscriptionObj.packageObj && subscriptionObj.packageObj.price_point_pkr && subscriptionObj.transactionId ) {
-// 		let updated = await subscriptionRepo.updateSubscription(subscription._id, {queued: true, auto_renewal: true});
-// 		console.log("Add in queueing server",subscriptionObj);
-// 		if(updated){
-// 			rabbitMq.addInQueue(config.queueNames.subscriptionDispatcher, subscriptionObj);
-// 			console.log('Payment - Subscription - AddInQueue - ', subscription._id, ' - ', (new Date()));
-// 		}else{
-// 			console.log('Failed to updated subscriber after adding in queue.');
-// 		}
-// 	} else {
-// 		console.log('Could not add in Subscription Queue because critical parameters are missing ', subscriptionObj.msisdn ,
-// 		subscriptionObj.packageObj.price_point_pkr,subscriptionObj.transactionId, ' - ', (new Date()) );
-// 	}
-// }
-
 // Subscribe against a package
 exports.subscribe = async (req, res) => {
-	// billingRepository.sendMessage('Lorem Ipsum is simply dummy text of the printing. Lorem Ipsum  standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen', '03476733767')
-
 	let gw_transaction_id = req.body.transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
 	console.log("decoded: ", decodedResponse)
@@ -149,10 +113,8 @@ exports.subscribe = async (req, res) => {
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
 		let msisdn = decodedUser.msisdn;
-	
-		// let msisdn = req.body.msisdn;
-		console.log("Decoded Msisdn: ", msisdn);
 		let user = await userRepo.getUserByMsisdn(msisdn);
+	
 		if(!user){
 			// Means no user in DB, let's create one
 			let userObj = {}, response = {};
@@ -200,30 +162,10 @@ exports.subscribe = async (req, res) => {
 			}
 		}
 	}
-	// else{
-	// 	console.log('No decoded user present');
-	// 	res.send({code: config.codes.code_error, message: "Authentication Failure", gw_transaction_id: gw_transaction_id});
-	// }
 }
 
 doSubscribe = async(req, res, user, gw_transaction_id) => {
 	if(user && user.active === true && user.is_black_listed === false){
-		// User available in DB
-		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
-
-		// if(!subscriber){
-		// 	// Subscriber is entering into the system for the first time
-		// 	// No subscriber found in DB, lets create new one
-		// 	var postObj = {};
-		// 	postObj.user_id = user._id;
-		// 	subscriber = await subscriberRepo.createSubscriber(postObj);
-		// }
-
-
-		/* 
-		* Subscriber created successfully
-		* Let's create subscription if not already created
-		*/
 		
 		let newPackageId = req.body.package_id;
 		let packageObj = await coreRepo.getPackage(newPackageId);
@@ -234,7 +176,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 				// No subscription available, let's create one
 				let subscriptionObj = {};
 				subscriptionObj.user_id = user._id;
-				// subscriptionObj.subscriber_id = subscriber._id;
 				subscriptionObj.paywall_id = packageObj.paywall_id;
 				subscriptionObj.subscribed_package_id = newPackageId;
 				subscriptionObj.source = req.body.source ?  req.body.source : 'unknown';
@@ -308,8 +249,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', gw_transaction_id: gw_transaction_id});
 										sendTrialMessage = true;
 									}
-
-									// res.send({code: config.codes.code_error, message: 'Insifficiant balance, please recharge your account and try again', gw_transaction_id: gw_transaction_id});
 								}
 							} catch(err){
 								console.log("Error while direct billing first time",err.message,user.msisdn);
@@ -344,8 +283,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 						console.log("Direct Billing processed",result,user.msisdn);
 						if(result.message === "success"){
-							// subscription = await subscriptionRepo.createSubscription(subscriptionObj);
-							// subscribePackage(subscription, packageObj);
 							res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', 
 										gw_transaction_id: gw_transaction_id});
 							sendChargingMessage = true;
@@ -369,7 +306,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					if (subscriptionObj.affiliate_mid === 'gdn'){
 						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
 					}
-					// console.log("Messages",message,user.msisdn);
 					text = message;
 					text = text.replace("%trial_hours%",trial_hours);
 					text = text.replace("%price%",packageObj.display_price_point_numeric);
@@ -386,7 +322,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					if(subscriptionObj.affiliate_mid === 'gdn'){
 						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
 					}
-					// console.log("Messages",message, user.msisdn);
 				
 					console.log("Subscription Message Text", message, user.msisdn);
 					messageRepo.sendMessageDirectly(message, user.msisdn);
@@ -403,7 +338,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					if(subscription.queued === false){
 						let history = {};
 						history.user_id = user._id;
-						// history.subscriber_id = subscriber._id;
 						history.subscription_id = subscription._id;
 
 						// if both subscribed and upcoming packages are same
@@ -580,7 +514,6 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	let nextBilling = _.clone(localDate);
 	nextBilling = nextBilling.setHours(nextBilling.getHours() + trial_hours);
 
-	// subscriptionObj.next_billing_timestamp = nexBilling.setHours (nexBilling.getHours() + trial_hours );
 	subscriptionObj.last_billing_timestamp = localDate;
 	subscriptionObj.next_billing_timestamp = nextBilling;
 	subscriptionObj.subscription_status = 'trial';
@@ -629,13 +562,7 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 				dataToReturn.subscriptionObj = subscriptionObj;
 				resolve(dataToReturn);
 			}else {
-				/*if (result.message === "failed" && result.response.errorCode === "500.007.05") {
-					dataToReturn.desc = 'Easypaisa account is not activated on this number. Please use an Easypaisa account. Thanks';
-					dataToReturn.status = "failed";
-                    dataToReturn.subscriptionObj = subscriptionObj;
-                    resolve(dataToReturn);
-                    return;
-				}else*/ if(result.desc && result.desc !== 'Insufficient Balance'){
+				if(result.desc && result.desc !== 'Insufficient Balance'){
 					dataToReturn.desc = result.desc;
 					dataToReturn.status = "failed";
 					dataToReturn.subscriptionObj = subscriptionObj;
@@ -730,7 +657,6 @@ exports.recharge = async (req, res) => {
 	}
 
 	if(user){
-		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
 		let subscription = await subscriptionRepo.getSubscriptionByPackageId(user._id, package_id);
 		console.log("Subscription",subscription);
 		if(subscription && subscription.subscription_status === 'graced'){
@@ -776,8 +702,6 @@ exports.status = async (req, res) => {
 	}
 
 	if(user){
-		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
-		// if(subscriber){
 			let result;
 			if(package_id){
 				result = await subscriptionRepo.getSubscriptionByPackageId(user._id, package_id);
@@ -803,10 +727,6 @@ exports.status = async (req, res) => {
 			}else{
 				res.send({code: config.codes.code_error, data: 'No subscriptions was found', gw_transaction_id: gw_transaction_id});	
 			}
-		// }
-		// else{
-		// 	res.send({code: config.codes.code_error, data: 'No subscriber was found', gw_transaction_id: gw_transaction_id});	
-		// }
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
@@ -817,8 +737,6 @@ exports.getAllSubscriptions = async (req, res) => {
 	let msisdn = req.query.msisdn;
 	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
-		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
-		// if(subscriber){
 			let result = await subscriptionRepo.getAllActiveSubscriptions(user._id);
 			if(result && result.length > 0){
 				let subscriptions = [];
@@ -843,9 +761,6 @@ exports.getAllSubscriptions = async (req, res) => {
 			}else{
 				res.send({code: config.codes.code_error, data: 'No active subscription found', gw_transaction_id: gw_transaction_id});	
 			}
-		// }else{
-		// 	res.send({code: config.codes.code_error, data: 'No subscriber was found', gw_transaction_id: gw_transaction_id});	
-		// }
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
@@ -855,14 +770,9 @@ exports.delete = async (req, res) => {
 	let msisdn = req.query.msisdn;
 	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
-		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
-		// if(subscriber){
 			await subscriptionRepo.deleteAllSubscriptions(user._id);
 			await billingHistoryRepo.deleteHistoryForSubscriber(user._id);
 			res.send({code: config.codes.code_success, message: 'Done'});
-		// }else{
-		// 	res.send({code: config.codes.code_success, message: 'No subscriber found'});
-		// }
 	}else{
 		res.send({code: config.codes.code_success, message: 'No user found for this msisdn'});
 	}
@@ -886,8 +796,6 @@ exports.unsubscribe = async (req, res) => {
 	}
 	
 	if(user){
-		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
-		// if(subscriber){
 			let subscriptions = [];
 			if(package_id){
 				let subscription = await subscriptionRepo.getSubscriptionByPackageId(user._id, package_id);
@@ -924,26 +832,23 @@ exports.unsubscribe = async (req, res) => {
 					history.user_id = user._id;
 					history.paywall_id = packageObj.paywall_id;
 					history.package_id = packageObj._id;
-					// history.subscriber_id = subscription.subscriber_id;
 					history.subscription_id = subscription._id;
 					history.billing_status = 'unsubscribe-request-received-and-expired';
 					history.source = source ? source : "na";
 					history.operator = user.operator;
 					result = await billingHistoryRepo.createBillingHistory(history);
 	
-					// if(result){
-						if(subscription.marketing_source && subscription.marketing_source !== 'none'){
-							
-							// This user registered from a marketer, let's put this user in gray list
-							result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
-							result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
-							if(result){
-								unSubCount += 1;
-							}
-						}else{
+					if(subscription.marketing_source && subscription.marketing_source !== 'none'){
+						
+						// This user registered from a marketer, let's put this user in gray list
+						result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
+						result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
+						if(result){
 							unSubCount += 1;
 						}
-					// }
+					}else{
+						unSubCount += 1;
+					}
 				}
 
 				console.log("unSubCount", unSubCount, "subscriptions.length", subscriptions.length);
@@ -965,9 +870,6 @@ exports.unsubscribe = async (req, res) => {
 			}else{
 				res.send({code: config.codes.code_error, message: 'No subscription found!', gw_transaction_id: gw_transaction_id});	
 			}
-		// }else{
-		// 	res.send({code: config.codes.code_error, message: 'No subscriber found!', gw_transaction_id: gw_transaction_id});	
-		// }
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid user/msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
@@ -986,7 +888,6 @@ exports.expire = async (req, res) => {
 	let user = await userRepo.getUserByMsisdn(msisdn);
 	if(user){
 		let packageObj = await coreRepo.getPackage(package_id);
-		// let subscriber = await subscriberRepo.getSubscriberByUserId(user._id);
 		let subscription = await subscriptionRepo.getSubscriptionByPackageId(user._id. package_id);
 		await subscription.updateSubscription(subscription._id, {auto_renewal: false, subscription_status: 'expired', consecutive_successive_bill_counts: 0});
 		
@@ -995,7 +896,6 @@ exports.expire = async (req, res) => {
 		history.user_id = user._id;
 		history.paywall_id = packageObj.paywall_id;
 		history.package_id = packageObj._id;
-		// history.subscriber_id = subscription.subscriber_id;
 		history.subscription_id = subscription._id;
 		history.billing_status = 'expired';
 		history.source = source ? source : "na";
@@ -1020,21 +920,4 @@ exports.getPackagesOfSubscriber = async (req, res) => {
 	let postData = req.query;
 	let result = await subscriptionRepo.getPackagesOfSubscriber(postData.user_id);
 	res.send(result);
-}
-
-
-// Helper functions
-function getCurrentDate() {
-    var now = new Date();
-    var strDateTime = [
-        [now.getFullYear(),
-            AddZero(now.getMonth() + 1),
-            AddZero(now.getDate())].join("-"),
-        [AddZero(now.getHours()),
-            AddZero(now.getMinutes())].join(":")];
-    return strDateTime;
-}
-
-function AddZero(num) {
-    return (num >= 0 && num < 10) ? "0" + num : num + "";
 }
