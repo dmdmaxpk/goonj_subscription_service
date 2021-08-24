@@ -1,7 +1,8 @@
 const Axios = require('axios');
 const config = require('../config');
+
 const RabbitMq = require('../rabbit/RabbitMq');
-const rabbitMq = new RabbitMq().getInstance();
+const rabbitMq = new RabbitMq(config.billingHistoryRabbitMqConnectionString).getInstance();
 
 class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {
@@ -27,25 +28,13 @@ class BillingHistoryRepository {
             history.discount = false;
             history.price = price;
         }
-        console.log("assembled billing history", history);
         this.createBillingHistory(history);
     }
 
 
     async createBillingHistory(history){
-        console.log("warning", "Pushing history log to queue!", history)
+        console.warn("Pushing history log to queue!", history)
         await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
-    }
-
-    async deleteHistoryForSubscriber(user_id){
-        return await Axios.post(`${config.servicesUrls.billing_history_service}/delete_history_for_subscriber`, {user_id})
-        .then(res =>{ 
-            let result = res.data;
-            return result
-        })
-        .catch(err =>{
-            return err
-        })
     }
 
     async getExpiryHistory(user_id){

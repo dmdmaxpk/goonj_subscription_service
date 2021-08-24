@@ -21,9 +21,6 @@ router.route('/getAllSubs')
 router.route('/recharge')
     .post(controller.recharge);
 
-router.route('/delete')
-    .get(controller.delete);
-
 router.route('/get-subscription-by-package-id')
     .get(controller.getSubscriptionByPackageId)
 

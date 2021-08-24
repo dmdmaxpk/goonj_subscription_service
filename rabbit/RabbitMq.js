@@ -2,7 +2,8 @@ const config = require('../config');
 const amqp = require('amqplib/callback_api');
 
 class RabbitMq {
-    constructor() {
+    constructor(connection_string) {
+        this.connection_string = connection_string;
         this.connection = null;
         this.channel = null;
     }
@@ -10,13 +11,11 @@ class RabbitMq {
     initServer(callback) {
         this.createConnection((err, connection) => {
             if (err) {
-                console.log('Error while connection to RabbitMq: ', err);
                 callback(err);
             } else {
                 this.connection = connection;
                 this.createChannel(connection, (error, channel) => {
                     if (error) {
-                        console.log('Error while creating RabbitMq channel', error);
                         callback(error);
                     } else {
                         this.channel = channel;
@@ -28,11 +27,11 @@ class RabbitMq {
     }
 
     createConnection(callback){
-        amqp.connect(config.rabbitMqConnectionString, (error, connection) => {
+        amqp.connect(this.connection_string, (error, connection) => {
             if (error) {
-                console.log('connection error: ', error);
                 callback(error);
             }else{
+                console.info(`Connection successfull with ${this.connection_string}`);
                 callback(null, connection);
                 this.connection = connection;
             }
@@ -77,14 +76,22 @@ class RabbitMq {
 }  
 
 class Singleton {
-    constructor() {
-        if (!Singleton.instance) {
-            Singleton.instance = new RabbitMq();
+    constructor(connection_string) {
+        this.connection_string = connection_string;
+
+        let obj = config.rabbitMqConnections.find(o => o.connection_string === connection_string);
+        if (!obj) {
+            let instance = new RabbitMq(connection_string);
+            config.rabbitMqConnections.push({connection_string, instance});
+            console.info(`Object for ${connection_string} not found and thus added in dict.`)
+        }else{
+            console.info(`Object for ${connection_string} found`)
         }
     }
   
     getInstance() {
-        return Singleton.instance;
+        let obj = config.rabbitMqConnections.find(o => o.connection_string === this.connection_string);
+        return obj.instance;
     }
   }
 
