@@ -403,7 +403,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										if(result.message === "success"){
 											res.send({code: config.codes.code_success, message: 'Subscribed Successfully chance', gw_transaction_id: gw_transaction_id});
 										}else{
-											res.send({code: config.codes.code_error, message: 'Failed to subscribe, insufficient balance', gw_transaction_id: gw_transaction_id});
+											res.send({code: config.codes.code_error, message: `Failed to subscribe, possible cause: ${result.desc}`, gw_transaction_id: gw_transaction_id});
 										}
 									} catch(err){
 										console.log(err);
@@ -424,7 +424,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 											if(result && result.message === "success"){
 												res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
 											}else{
-												res.send({code: config.codes.code_error, message: 'Failed to switch package, insufficient balance', gw_transaction_id: gw_transaction_id});
+												res.send({code: config.codes.code_error, message: `Failed to switch package, possible cause: ${result.desc}`, gw_transaction_id: gw_transaction_id});
 											}
 										} catch(graceErr){
 											console.log(graceErr);
@@ -455,7 +455,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									if(result.message === "success"){
 										res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
 									}else{
-										res.send({code: config.codes.code_error, message: 'Failed to switch package, insufficient balance', gw_transaction_id: gw_transaction_id});
+										res.send({code: config.codes.code_error, message: `Failed to switch package, possible cause: ${result.desc}`, gw_transaction_id: gw_transaction_id});
 									}
 								} catch(graceErr){
 									console.log(graceErr);
