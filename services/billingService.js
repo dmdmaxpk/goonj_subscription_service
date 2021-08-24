@@ -139,7 +139,7 @@ class BillingService{
 
         console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
         this.sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
-            let updated = await this.subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
+            let updated = await this.subscriptionRepository.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
             if(updated){
                 console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
                 history.operator_response = fulfilled;
