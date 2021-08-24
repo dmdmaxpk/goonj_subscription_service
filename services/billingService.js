@@ -166,7 +166,7 @@ class BillingService{
         } else if (mid === "1" || mid === "gdn" ){
             return new Promise((resolve,reject) => { reject(null)})
         }
-        console.log("url",url)
+        console.log("warning", "affiliate url",url)
         return new Promise(function(resolve, reject) {
             axios({
                 method: 'post',
