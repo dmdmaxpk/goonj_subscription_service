@@ -139,7 +139,7 @@ class BillingService{
 
         console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
         this.sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
-            let updated = await this.subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
+            let updated = await this.subscriptionRepository.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
             if(updated){
                 console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
                 history.operator_response = fulfilled;
@@ -166,7 +166,7 @@ class BillingService{
         } else if (mid === "1" || mid === "gdn" ){
             return new Promise((resolve,reject) => { reject(null)})
         }
-        console.log("url",url)
+        console.log("warning", "affiliate url",url)
         return new Promise(function(resolve, reject) {
             axios({
                 method: 'post',
