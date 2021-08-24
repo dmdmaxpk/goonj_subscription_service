@@ -31,7 +31,10 @@ const servicesUrls = {
     core_service: 'http://localhost:3000',
     message_service: 'http://localhost:3003'
 }
+
+const rabbitMqConnections = [];
 const rabbitMqConnectionString = 'amqp://127.0.0.1';
+const billingHistoryRabbitMqConnectionString = 'amqp://10.0.1.88';
 const db_name = 'goonjpaywall';
 
 const queueNames = {
@@ -57,9 +60,11 @@ let config = {
         servicesUrls: servicesUrls,
         rabbitMqConnectionString: rabbitMqConnectionString,
         time_between_billing_attempts_hours: time_between_billing_attempts_hours,
-        Ideation_call_back_url: Ideation_call_back_url,
-        Ideation_call_back_url_2: Ideation_call_back_url_2,
-        Ideation_call_back_url_3: Ideation_call_back_url_3
+        ideation_callback_url: Ideation_call_back_url,
+        ideation_callback_url2: Ideation_call_back_url_2,
+        ideation_callback_url3: Ideation_call_back_url_3,
+        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString,
+        rabbitMqConnections: rabbitMqConnections
     },
     staging: {
         port: 3004,
@@ -69,9 +74,11 @@ let config = {
         servicesUrls: servicesUrls,
         rabbitMqConnectionString: rabbitMqConnectionString,
         time_between_billing_attempts_hours: time_between_billing_attempts_hours,
-        Ideation_call_back_url: Ideation_call_back_url,
-        Ideation_call_back_url_2: Ideation_call_back_url_2,
-        Ideation_call_back_url_3: Ideation_call_back_url_3
+        ideation_callback_url: Ideation_call_back_url,
+        ideation_callback_url2: Ideation_call_back_url_2,
+        ideation_callback_url3: Ideation_call_back_url_3,
+        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString,
+        rabbitMqConnections: rabbitMqConnections
     },
     production: {
         port: 3004,
@@ -81,9 +88,11 @@ let config = {
         servicesUrls: servicesUrls,
         rabbitMqConnectionString: rabbitMqConnectionString,
         time_between_billing_attempts_hours: time_between_billing_attempts_hours,
-        Ideation_call_back_url: Ideation_call_back_url,
-        Ideation_call_back_url_2: Ideation_call_back_url_2,
-        Ideation_call_back_url_3: Ideation_call_back_url_3
+        ideation_callback_url: Ideation_call_back_url,
+        ideation_callback_url2: Ideation_call_back_url_2,
+        ideation_callback_url3: Ideation_call_back_url_3,
+        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString,
+        rabbitMqConnections: rabbitMqConnections
     }
 };
 

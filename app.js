@@ -20,9 +20,10 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use('/', require('./routes/index'));
 
 const RabbitMq = require('./rabbit/RabbitMq');
-const rabbitMq = new RabbitMq().getInstance();
+const rabbitMq = new RabbitMq(config.rabbitMqConnectionString).getInstance();
 
-const container = require('./configurations/container');
+
+const billingHistoryRabbitMq = new RabbitMq(config.billingHistoryRabbitMqConnectionString).getInstance();
 
 // Start Server
 let { port } = config;
@@ -32,11 +33,14 @@ app.listen(port, () => {
         if(error){
             console.error(error)
         }else{
-            console.log('RabbitMq status', response);
-            try{
-            }catch(error){
-                console.error(error.message);
-            }
+            console.log('Local RabbitMq status', response);
+            billingHistoryRabbitMq.initServer((err, res) => {
+                if(err){
+                    console.log('Error BillingHistoryRabbitMq', err);
+                }else{
+                    console.log('BillingHistory RabbitMq status', res);
+                }
+            });
         }
     });
 });

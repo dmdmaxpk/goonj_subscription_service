@@ -758,19 +758,6 @@ exports.getAllSubscriptions = async (req, res) => {
 	}
 }
 
-exports.delete = async (req, res) => {
-	let msisdn = req.query.msisdn;
-	let user = await userRepo.getUserByMsisdn(msisdn);
-	if(user){
-			await subscriptionRepo.deleteAllSubscriptions(user._id);
-			await billingHistoryRepo.deleteHistoryForSubscriber(user._id);
-			res.send({code: config.codes.code_success, message: 'Done'});
-	}else{
-		res.send({code: config.codes.code_success, message: 'No user found for this msisdn'});
-	}
-	
-}
-
 // UnSubscribe
 exports.unsubscribe = async (req, res) => {
 	let gw_transaction_id = req.body.gw_transaction_id;
