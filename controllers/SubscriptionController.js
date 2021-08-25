@@ -760,6 +760,8 @@ exports.getAllSubscriptions = async (req, res) => {
 
 // UnSubscribe
 exports.unsubscribe = async (req, res) => {
+	console.log("warning", "body", req.body)
+
 	let gw_transaction_id = req.body.gw_transaction_id;
 	
 	let user;
