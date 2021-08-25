@@ -1,8 +1,8 @@
 const Axios = require('axios');
 const config = require('../config');
 
-const RabbitMq = require('../rabbit/RabbitMq');
-const rabbitMq = new RabbitMq(config.billingHistoryRabbitMqConnectionString).getInstance();
+const RabbitMq = require('../rabbit/BillingHistoryRabbitMq');
+const rabbitMq = new RabbitMq().getInstance();
 
 class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {
@@ -33,7 +33,7 @@ class BillingHistoryRepository {
 
 
     async createBillingHistory(history){
-        console.warn("Pushing history log to queue!", history)
+        console.warn("Pushing history log to queue:", history.operator_response)
         await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
     }
 

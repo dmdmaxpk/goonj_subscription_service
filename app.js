@@ -22,10 +22,10 @@ app.use(logger('dev'));
 app.use('/', require('./routes/index'));
 
 const RabbitMq = require('./rabbit/RabbitMq');
-const rabbitMq = new RabbitMq(config.rabbitMqConnectionString).getInstance();
+const rabbitMq = new RabbitMq().getInstance();
 
-
-const billingHistoryRabbitMq = new RabbitMq(config.billingHistoryRabbitMqConnectionString).getInstance();
+const BillingHistoryRabbitMq = require('./rabbit/BillingHistoryRabbitMq');
+const billingHistoryRabbitMq = new BillingHistoryRabbitMq().getInstance();
 
 // Start Server
 let { port } = config;
