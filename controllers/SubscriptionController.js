@@ -686,15 +686,19 @@ exports.status = async (req, res) => {
 	if(!package_id){
 		package_id = config.default_package_id;
 	}
-
+	
+	console.log('warning', 'user id', user_id);
 	if (user_id){
+		console.log('warning', 'in if block');
 		user = await userRepo.getUserById(user_id);
+		console.log('user', user, 'body', req.body);
 	} else {
+		console.log('warning', 'in else block');
 		user = await userRepo.getUserByMsisdn(msisdn);
+		console.log('user', user, 'body', req.body);
 	}
 
-	console.log('user', user, 'body', req.body);
-	
+
 	if(user){
 			let result;
 			if(package_id){
