@@ -156,7 +156,7 @@ class SubscriptionRepository {
         return result;
     }
     
-    async resetAmountBilledToday ()  {
+    async resetAmountBilledToday() {
         const result = await Subscription.updateMany({},{$set: { amount_billed_today : 0}});
         return result;
     }

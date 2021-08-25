@@ -12,6 +12,7 @@ require('./models/Subscription');
 // Connection to Database
 mongoose.connect(config.mongo_connection_url, {useUnifiedTopology: true, useCreateIndex: true, useNewUrlParser: true});
 mongoose.connection.on('error', err => console.error(`Error: ${err.message}`));
+console.log('Mongo connected');
 
 // Middlewares
 app.use(bodyParser.json({limit: '5120kb'}));  //5MB
@@ -26,6 +27,15 @@ const rabbitMq = new RabbitMq().getInstance();
 
 const BillingHistoryRabbitMq = require('./rabbit/BillingHistoryRabbitMq');
 const billingHistoryRabbitMq = new BillingHistoryRabbitMq().getInstance();
+
+// at 12:00 am sharp to reset daily amount
+var CronJob = require('cron').CronJob;
+var job = new CronJob('0 0 0 * * *', function() {
+    let SubscriptionRepo = require('./repos/SubscriptionRepo');
+    let subscriptionRepo = new SubscriptionRepo();
+    subscriptionRepo.resetAmountBilledToday();
+}, null, true, 'Asia/Karachi');
+job.start();
 
 // Start Server
 let { port } = config;
