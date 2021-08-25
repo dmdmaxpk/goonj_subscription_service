@@ -693,6 +693,8 @@ exports.status = async (req, res) => {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 
+	console.log('user', user, 'body', req.body);
+	
 	if(user){
 			let result;
 			if(package_id){
