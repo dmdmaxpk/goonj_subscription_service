@@ -689,15 +689,10 @@ exports.status = async (req, res) => {
 	
 	console.log('warning', 'user id', user_id);
 	if (user_id){
-		console.log('warning', 'in if block');
 		user = await userRepo.getUserById(user_id);
-		console.log('user', user, 'body', req.body);
 	} else {
-		console.log('warning', 'in else block');
 		user = await userRepo.getUserByMsisdn(msisdn);
-		console.log('user', user, 'body', req.body);
 	}
-
 
 	if(user){
 			let result;
@@ -766,8 +761,6 @@ exports.getAllSubscriptions = async (req, res) => {
 
 // UnSubscribe
 exports.unsubscribe = async (req, res) => {
-	console.log("warning", "body", req.body)
-
 	let gw_transaction_id = req.body.gw_transaction_id;
 	
 	let user;
@@ -781,7 +774,6 @@ exports.unsubscribe = async (req, res) => {
 	}else if(msisdn){
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
-	console.log("warning", "incoming user", user)
 	if(user){
 			let subscriptions = [];
 			if(package_id){

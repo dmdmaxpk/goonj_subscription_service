@@ -25,7 +25,6 @@ class UserRepository {
         return await Axios.get(`${config.servicesUrls.user_service}/user/get_user_by_id?id=${user_id}`)
         .then(res =>{
             let result = res.data;
-            console.log("api result", result)
             return result;
         })
         .catch(err =>{
