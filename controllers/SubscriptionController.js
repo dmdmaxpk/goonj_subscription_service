@@ -773,7 +773,7 @@ exports.unsubscribe = async (req, res) => {
 	}else if(msisdn){
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
-	
+	console.log("warning", "incoming user", user)
 	if(user){
 			let subscriptions = [];
 			if(package_id){
