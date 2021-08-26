@@ -114,7 +114,7 @@ class SubscriptionRepository {
         postData.last_modified = new Date();
     
         try {
-            const result = await Subscription.updateOne(query, postData);
+            const result = await Subscription.findOneAndUpdate(query, postData, {new: true});
             if (result.nModified === 0) {
                 return undefined;
             } else {
@@ -145,7 +145,7 @@ class SubscriptionRepository {
         let data = await Subscription.updateMany({"user_id": {$in:user_ids }},{$set:{should_remove: true}});
         return data;
     }
-    
+
     async deleteSubscription  (subscription_id)  {
         const result = await Subscription.deleteOne({_id: subscription_id});
         return result;
@@ -164,7 +164,7 @@ class SubscriptionRepository {
     async markSubscriptionInactive (subscription_id)  {
         if (subscription_id) { 
             const query = { _id: subscription_id };
-            const result = await Subscription.updateOne(query, { $set: { active: false } });
+            const result = await Subscription.findOneAndUpdate(query, { $set: { active: false } }, {new: true});
             if (result.nModified === 0) {
                 return undefined;
             }else{
@@ -179,7 +179,7 @@ class SubscriptionRepository {
     async unsubscribe (subscription_id)  {
         if (subscription_id) { 
             const query = { _id: subscription_id };
-            const result = await Subscription.updateOne(query, { $set: { auto_renewal: false, subscription_status: 'expired' } });
+            const result = await Subscription.findOneAndUpdate(query, { $set: { auto_renewal: false, subscription_status: 'expired' } }, {new: true});
             if (result.nModified === 0) {
                 return undefined;
             }else{

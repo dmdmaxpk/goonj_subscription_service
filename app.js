@@ -10,7 +10,7 @@ const app = express();
 require('./models/Subscription');
 
 // Connection to Database
-mongoose.connect(config.mongo_connection_url, {useUnifiedTopology: true, useCreateIndex: true, useNewUrlParser: true});
+mongoose.connect(config.mongo_connection_url, {useUnifiedTopology: true, useCreateIndex: true, useNewUrlParser: true, useFindAndModify: false});
 mongoose.connection.on('error', err => console.error(`Error: ${err.message}`));
 console.log('Mongo connected');
 
@@ -36,6 +36,13 @@ var job = new CronJob('0 0 0 * * *', function() {
     subscriptionRepo.resetAmountBilledToday();
 }, null, true, 'Asia/Karachi');
 job.start();
+
+// Pre-renewal message cron
+var preRenewalJob = new CronJob('0 10 0 * * *', function() {
+    const preRenewalService = require('./services/PreRenewalService');
+    preRenewalService.getPreRenewalSubscriptions();
+}, null, true, 'Asia/Karachi');
+preRenewalJob.start();
 
 // Start Server
 let { port } = config;
