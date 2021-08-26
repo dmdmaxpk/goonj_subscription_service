@@ -80,7 +80,7 @@ SubscriptionEvents.on('remove', data => {
 });
 
 triggerEvent = async (method, data) => {
-    let form = {collection: 'users', method, data};
+    let form = {collection: 'subscriptions', method, data};
     axios.post(`${config.servicesUrls.billing_history_service}/sync/collection`, form)
     .then(res =>{ 
         console.log(res.data);
