@@ -120,34 +120,28 @@ exports.subscribe = async (req, res) => {
 			let userObj = {}, response = {};
 			userObj.msisdn = msisdn;
 			userObj.operator = response.operator;
-			userObj.source = req.body.source ? req.body.source : "na";
+			userObj.source = req.body.source ? req.body.source : "app";
 	
 			if(payment_source && payment_source === "easypaisa"){
 				response.operator = "easypaisa";
 			}else{
 				try{
 					response = await tpEpCoreRepo.subscriberQuery(msisdn);
-					console.log("SUBSCRIBER QUERY RESPONSE - SUBSCRIBE", response);
+					console.log("subscriber query:", response);
 				}catch(err){
-					console.log("SUBSCRIBER QUERY ERROR - SUBSCRIBE", err);
+					console.log("subscriber query error:", err);
 					response = err;
 				}
 			}
 	
-			if(response && (response.operator === "tp") || response.operator === 'easypaisa'){
+			if(response && (response.operator === "telenor") || response.operator === 'easypaisa'){
 				try {
 					userObj.operator = response.operator;
 					user = await userRepo.createUser(userObj);
-					console.log('Payment - Subscriber - UserCreated - ', response.operator, ' - ', msisdn, ' - ', user.source, ' - ', (new Date()));
-	
-					if(user && user.is_black_listed){
-						console.log('The user is blacklisted');
-						res.send({code: config.codes.code_error, message: "The user is blacklisted", gw_transaction_id: gw_transaction_id});
-					}else{
-						doSubscribe(req, res, user, gw_transaction_id);
-					}
+					console.log('subscribe - user created - ', response.operator, ' - ', msisdn, ' - ', user.source, ' - ', (new Date()));
+					doSubscribe(req, res, user, gw_transaction_id);
 				} catch(er) {
-					res.send({code: config.codes.code_error, message: 'Failed to subscriber user', gw_transaction_id: gw_transaction_id})
+					res.send({code: config.codes.code_error, message: 'Failed to subscribe user', gw_transaction_id: gw_transaction_id})
 				}
 			}else{
 				coreRepo.createBlockUserHistory(msisdn, req.body.affiliate_unique_transaction_id, req.body.affiliate_mid, response ? response.api_response : "no response", req.body.source);
@@ -155,7 +149,7 @@ exports.subscribe = async (req, res) => {
 			}
 		}else{
 			if(user.is_black_listed){
-				console.log('The user is blacklisted');
+				console.log(`The user ${user.msisdn} is blacklisted`);
 				res.send({code: config.codes.code_error, message: "The user is blacklisted", gw_transaction_id: gw_transaction_id});
 			}else{
 				doSubscribe(req, res, user, gw_transaction_id);
