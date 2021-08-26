@@ -8,6 +8,7 @@ class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {
         let history = {};
         history.user_id = user._id;
+        history.msisdn = user.msisdn;
         history.subscription_id = subscription._id;
         history.paywall_id = packageObj.paywall_id;
         history.package_id = subscription.subscribed_package_id;
@@ -16,7 +17,6 @@ class BillingHistoryRepository {
         history.billing_status = billingStatus;
         history.response_time = response_time;
         history.source = subscription.source;
-
         history.operator = subscription.payment_source?subscription.payment_source:'telenor';
     
         if(micro_charge === true){
