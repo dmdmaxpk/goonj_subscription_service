@@ -5,7 +5,6 @@ const messageRepo = container.resolve("messageRepository");
 
 getPreRenewalSubscriptions = async() => {
     try {
-        // let preRenewalSubscriptions = await this.subscriptionRepo.getPreRenwalSubscriptions();
         let preRenewalSubscriptions = await subscriptionRepo.getPreRenwalSubscriptions();
         // console.log("[Pre Renewal Subscriptions]",preRenewalSubscriptions);
         for (let i = 0 ; i < preRenewalSubscriptions.length ; i++) {

@@ -69,7 +69,7 @@ class BillingService{
                     this.sendAffiliationCallback(
                         updatedSubscription.affiliate_unique_transaction_id, 
                         updatedSubscription.affiliate_mid,
-                        user._id,
+                        user,
                         updatedSubscription._id,
                         updatedSubscription.subscriber_id,
                         packageObj._id,
@@ -84,6 +84,7 @@ class BillingService{
         let history = {};
         history.micro_charge = (updatedSubscription  && updatedSubscription.try_micro_charge_in_next_cycle) ? updatedSubscription.try_micro_charge_in_next_cycle : false;
         history.user_id = user._id;
+        history.msisdn = user.msisdn;
         history.subscription_id =  updatedSubscription ? updatedSubscription._id : subscription._id ;
         history.subscriber_id = subscription.subscriber_id;
         history.paywall_id = packageObj.paywall_id;
@@ -112,6 +113,7 @@ class BillingService{
         // Add history record
         let history = {};
         history.user_id = user._id;
+        history.msisdn = user.msisdn;
         history.micro_charge = micro !== undefined ? micro : false;
         history.price = packageObj.price_point_pkr;
         history.source = subscription.source ? subscription.source : checkSubscription.source;
@@ -126,11 +128,12 @@ class BillingService{
         await this.billingHistoryRepository.createBillingHistory(history);
     }
 
-    async sendAffiliationCallback(tid, mid, user_id, subscription_id, package_id, paywall_id) {
+    async sendAffiliationCallback(tid, mid, user, subscription_id, package_id, paywall_id) {
         let combinedId = tid + "*" +mid;
 
         let history = {};
-        history.user_id = user_id;
+        history.user_id = user._id;
+        history.msisdn = user.msisdn;
         history.paywall_id = paywall_id;
         history.subscription_id = subscription_id;
         history.package_id = package_id;
