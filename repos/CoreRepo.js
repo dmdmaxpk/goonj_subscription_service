@@ -3,6 +3,7 @@ const config = require('../config');
 
 class CoreRepository{
     async createViewLog(user_id, subscription_id, source, operator){
+        console.log("warining", "operator", operator);
         return await Axios.post(`${config.servicesUrls.core_service}/viewlogs/create_view_log`, {user_id, subscription_id, source, operator})
         .then(res =>{ 
             let result = res.data;
