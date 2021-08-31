@@ -106,14 +106,15 @@ class BillingService{
     async billingFailed(user, subscription, response, packageObj, transaction_id, first_time_billing, response_time, micro){
         console.log("success", "billing failed: package obj", packageObj.price_point_pkr);
 
-        let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id);
-        if(checkSubscription === null){
-            subscription.subscription_status = 'none';
-            subscription.is_allowed_to_stream = false;
+        // let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id);
+        // if(checkSubscription === null){
+        //     subscription.subscription_status = 'none';
+        //     subscription.is_allowed_to_stream = false;
 
-            // creating subscription with None status in case of New user Failed Billing
-            checkSubscription = await this.subscriptionRepository.createSubscription(subscription);
-        }
+        //     // creating subscription with None status in case of New user Failed Billing
+        //     checkSubscription = await this.subscriptionRepository.createSubscription(subscription);
+        // }
+        
         // Add history record
         let history = {};
         history.user_id = user._id;
