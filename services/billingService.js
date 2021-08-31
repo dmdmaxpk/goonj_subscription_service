@@ -60,7 +60,7 @@ class BillingService{
             }
             
             let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id); 
-            updatedSubscription = checkSubscription === null ? await this.subscriptionRepository.createSubscription(subscription) : await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
+            updatedSubscription = checkSubscription === null ? await this.subscriptionRepository.createSubscription(subscription) : await this.subscriptionRepository.updateSubscription(subscription._id, subscription);
             console.log("updated sub", updateSubscription);
 
             // Check for the affiliation callback
