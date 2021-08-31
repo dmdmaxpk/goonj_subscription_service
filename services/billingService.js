@@ -60,7 +60,8 @@ class BillingService{
             }
             
             let checkSubscription = await this.subscriptionRepository.getSubscriptionByPackageId(user._id, packageObj._id); 
-            updatedSubscription = checkSubscription === null ? await this.subscriptionRepository.createSubscription(subscription) : await this.subscriptionRepository.updateSubscription(subscription._id, subscription);
+            // updatedSubscription = checkSubscription === null ? await this.subscriptionRepository.createSubscription(subscription) : await this.subscriptionRepository.updateSubscription(subscription._id, subscription);
+            updatedSubscription = await this.subscriptionRepository.createSubscription(subscription);
             console.log("updated sub", updatedSubscription);
 
             // Check for the affiliation callback
@@ -114,7 +115,7 @@ class BillingService{
         //     // creating subscription with None status in case of New user Failed Billing
         //     checkSubscription = await this.subscriptionRepository.createSubscription(subscription);
         // }
-        
+
         // Add history record
         let history = {};
         history.user_id = user._id;
