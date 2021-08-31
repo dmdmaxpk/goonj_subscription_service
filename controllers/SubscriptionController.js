@@ -215,6 +215,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						if(packageObj._id === 'QDfC' && (req.body.affiliate_mid === 'gdn' || req.body.affiliate_mid === 'gdn1' || req.body.affiliate_mid === 'gdn2' || req.body.affiliate_mid === 'gdn3')){
 							try {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
+								console.log("direct billing status", result.message)
 								if(result && result.message === "success"){
 									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
@@ -232,6 +233,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						}else if (req.body.affiliate_mid === '1569' || req.body.affiliate_mid === 'aff3a' || req.body.affiliate_mid === 'aff3' || req.body.affiliate_mid === 'goonj' || req.body.affiliate_mid === 'tp-gdn'){
 							try {
 								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
+								console.log("direct billing status", result.message)
 								if(result && result.message === "success"){
 									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
 									sendChargingMessage = true;
