@@ -115,13 +115,14 @@ class SubscriptionRepository {
     
         try {
             const result = await Subscription.findOneAndUpdate(query, postData, {new: true});
+            console.log("update result in updateSubscription", result)
             // if (result.nModified === 0) {
-            if (result === null) {
-                return undefined;
-            } else {
+            // if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
-            }
+            // } else {
+            //     return undefined;
+            // }
         } catch(error) {
             console.log(error);
             return error;
