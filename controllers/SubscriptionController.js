@@ -848,6 +848,8 @@ exports.unsubscribe = async (req, res) => {
 					else if(package_id == 'QDfC'){
 						smsText = `Moaziz saarif, ap ki Goonj Daily ki service khatam kar de gae hai. Dobara Rs.5+tax/day subscribe krny k liye link per click karain https://www.goonj.pk`
 					}
+					console.log("missing", package_id, smsText)
+
 					messageRepo.sendMessageDirectly(smsText,user.msisdn);
 
 					res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
