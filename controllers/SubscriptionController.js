@@ -14,8 +14,9 @@ const helper = require('../helper/helper');
 const  _ = require('lodash');
 
 exports.getSubscriptionDetails = async(req, res) => {
-	let { msisdn, gw_transaction_id } = req.query;
+	let { msisdn, transaction_id } = req.query;
 	console.log(req.query)
+
 	let obj = {};
 	if (msisdn) {
 		let user = await userRepo.getUserByMsisdn(msisdn);
@@ -39,15 +40,15 @@ exports.getSubscriptionDetails = async(req, res) => {
 					obj.subscriptions = subscriptions;
 					let expiryArray = await getExpiry(user._id);
 					obj.expiry = expiryArray;
-					res.send({code: config.codes.code_success, data: obj,gw_transaction_id:gw_transaction_id});
+					res.send({code: config.codes.code_success, data: obj,gw_transaction_id:transaction_id});
 				}else{
-					res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:gw_transaction_id});
+					res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:transaction_id});
 				}
 		}else{
-			res.send({code: config.codes.code_data_not_found, message: 'User not found',gw_transaction_id:gw_transaction_id});
+			res.send({code: config.codes.code_data_not_found, message: 'User not found',gw_transaction_id:transaction_id});
 		}
 	} else {
-		res.send({code: config.codes.code_invalid_data_provided, message: 'No msisdn provided',gw_transaction_id:gw_transaction_id});
+		res.send({code: config.codes.code_invalid_data_provided, message: 'No msisdn provided',gw_transaction_id:transaction_id});
 	}
 }
 
