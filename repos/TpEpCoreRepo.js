@@ -29,7 +29,7 @@ class TpEpCoreRepository{
     }
 
     async subscriberQuery(msisdn){
-        return await Axios.get(`${config.servicesUrls.tp_ep_core_service}/core/subscriber_query?msisdn=${msisdn}`)
+        return await Axios.get(`${config.servicesUrls.tp_ep_core_service}/core/subscriber-query?msisdn=${msisdn}`)
         .then(res =>{
             let result = res.data;
             return result;
