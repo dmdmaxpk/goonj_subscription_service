@@ -60,7 +60,9 @@ exports.getSubscriptionDetails = async(req, res) => {
 }
 
 getExpiry = async(user_id) => {
+	console.log('### Raw history request', user_id);
 	let rawHistories = await billingHistoryRepo.getExpiryHistory(user_id);
+	console.log('### Raw history', rawHistories);
 
 	if(rawHistories.length >= 2){
 		rawHistories.sort(function(a,b){
