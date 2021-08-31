@@ -6,7 +6,7 @@ class MessageRepository{
         return await Axios.post(`${config.servicesUrls.message_service}/message/send-to-queue`, {message, msisdn})
         .then(res =>{ 
             let result = res.data;
-            console.log("warning ", "message", result, msisdn)
+            console.log("warning ", "message queue", result, "message", message, "msisdn", msisdn)
             return result
         })
         .catch(err =>{
@@ -18,7 +18,7 @@ class MessageRepository{
         return await Axios.post(`${config.servicesUrls.message_service}/message/send-directly`, {message, msisdn})
         .then(res =>{ 
             let result = res.data;
-            console.log("warning ", "message", result, msisdn)
+            console.log("warning ", "message directly", result, "message", message, "msisdn", msisdn)
             return result
         })
         .catch(err =>{
