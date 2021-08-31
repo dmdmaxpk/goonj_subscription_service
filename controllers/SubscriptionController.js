@@ -21,29 +21,33 @@ exports.getSubscriptionDetails = async(req, res) => {
 	if (msisdn) {
 		let user = await userRepo.getUserByMsisdn(msisdn);
 		if(user) {
+			console.log('### User found', user);
 			let rawSubscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
-				let subscriptions = [];
-				if(rawSubscriptions){
-					for(let i = 0; i < rawSubscriptions.length; i++){
-						let sub = {};
-						sub.user_id = rawSubscriptions[i].user_id;
-						sub.subscription_id = rawSubscriptions[i]._id;
-						sub.paywall_id = rawSubscriptions[i].paywall_id;
-						sub.subscribed_package_id = rawSubscriptions[i].subscribed_package_id;
-						sub.subscription_status = rawSubscriptions[i].subscription_status;
-						sub.source = rawSubscriptions[i].source;
-						sub.added_dtm = rawSubscriptions[i].added_dtm;
-						sub.is_allowed_to_stream = rawSubscriptions[i].is_allowed_to_stream;
-						sub.date_on_which_user_entered_grace_period = rawSubscriptions[i].date_on_which_user_entered_grace_period;
-						subscriptions.push(sub);
-					}
-					obj.subscriptions = subscriptions;
-					let expiryArray = await getExpiry(user._id);
-					obj.expiry = expiryArray;
-					res.send({code: config.codes.code_success, data: obj,gw_transaction_id:transaction_id});
-				}else{
-					res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:transaction_id});
+			console.log('### Subscriptions', rawSubscriptions);
+			let subscriptions = [];
+			if(rawSubscriptions){
+				for(let i = 0; i < rawSubscriptions.length; i++){
+					let sub = {};
+					sub.user_id = rawSubscriptions[i].user_id;
+					sub.subscription_id = rawSubscriptions[i]._id;
+					sub.paywall_id = rawSubscriptions[i].paywall_id;
+					sub.subscribed_package_id = rawSubscriptions[i].subscribed_package_id;
+					sub.subscription_status = rawSubscriptions[i].subscription_status;
+					sub.source = rawSubscriptions[i].source;
+					sub.added_dtm = rawSubscriptions[i].added_dtm;
+					sub.is_allowed_to_stream = rawSubscriptions[i].is_allowed_to_stream;
+					sub.date_on_which_user_entered_grace_period = rawSubscriptions[i].date_on_which_user_entered_grace_period;
+					subscriptions.push(sub);
 				}
+				obj.subscriptions = subscriptions;
+				let expiryArray = await getExpiry(user._id);
+				console.log('### Expiry', expiryArray);
+				obj.expiry = expiryArray;
+				console.log('### Final', obj);
+				res.send({code: config.codes.code_success, data: obj,gw_transaction_id:transaction_id});
+			}else{
+				res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:transaction_id});
+			}
 		}else{
 			res.send({code: config.codes.code_data_not_found, message: 'User not found',gw_transaction_id:transaction_id});
 		}
