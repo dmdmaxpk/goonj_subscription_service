@@ -15,11 +15,12 @@ const  _ = require('lodash');
 
 exports.getSubscriptionDetails = async(req, res) => {
 	let { msisdn, transaction_id } = req.query;
-	console.log(req.query)
+	console.log('### Query:', req.query)
 
 	let obj = {};
 	if (msisdn) {
 		let user = await userRepo.getUserByMsisdn(msisdn);
+		console.log('### User', user)
 		if(user) {
 			console.log('### User found', user);
 			let rawSubscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
@@ -49,9 +50,11 @@ exports.getSubscriptionDetails = async(req, res) => {
 				res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:transaction_id});
 			}
 		}else{
+			console.log('### No User', msisdn);
 			res.send({code: config.codes.code_data_not_found, message: 'User not found',gw_transaction_id:transaction_id});
 		}
 	} else {
+		console.log('### No msisdn provided');
 		res.send({code: config.codes.code_invalid_data_provided, message: 'No msisdn provided',gw_transaction_id:transaction_id});
 	}
 }
