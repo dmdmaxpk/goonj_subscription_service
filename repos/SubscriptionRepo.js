@@ -115,14 +115,12 @@ class SubscriptionRepository {
     
         try {
             const result = await Subscription.findOneAndUpdate(query, postData, {new: true});
-            console.log("update result in updateSubscription", result)
-            // if (result.nModified === 0) {
-            // if (result) {
+            if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
-            // } else {
-            //     return undefined;
-            // }
+            } else {
+                return undefined;
+            }
         } catch(error) {
             console.log(error);
             return error;
@@ -168,11 +166,11 @@ class SubscriptionRepository {
             const query = { _id: subscription_id };
             const result = await Subscription.findOneAndUpdate(query, { $set: { active: false } }, {new: true});
             // if (result.nModified === 0) {
-            if (result === null) {
-                return undefined;
-            }else{
+            if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
+            }else{
+                return undefined;
             }
         } else {
              return undefined;
@@ -183,12 +181,11 @@ class SubscriptionRepository {
         if (subscription_id) { 
             const query = { _id: subscription_id };
             const result = await Subscription.findOneAndUpdate(query, { $set: { auto_renewal: false, subscription_status: 'expired' } }, {new: true});
-            // if (result.nModified === 0) {
-            if (result === null) {
-                return undefined;
-            }else{
+            if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
+            }else{
+                return undefined;
             }
         } else {
              return undefined;
