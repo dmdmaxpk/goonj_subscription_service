@@ -18,6 +18,8 @@ class BillingService{
         nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
 
         let updatedSubscription = undefined;
+
+        console.log("warning", "first time billing", first_time_billing)
         if (!first_time_billing) {
             // Update subscription
             let subscriptionObj = {};
@@ -58,6 +60,7 @@ class BillingService{
             }
             
             updatedSubscription = await this.subscriptionRepository.createSubscription(subscription);
+            console.log("updated sub", updateSubscription);
 
             // Check for the affiliation callback
             if( updatedSubscription.affiliate_unique_transaction_id && 
