@@ -81,13 +81,13 @@ SubscriptionEvents.on('remove', data => {
 
 triggerEvent = async (method, data) => {
     let form = {collection: 'subscriptions', method, data};
-    // axios.post(`${config.servicesUrls.billing_history_service}/sync/collection`, form)
-    // .then(res =>{ 
-    //     console.log(res.data);
-    // })
-    // .catch(err =>{
-    //     console.log(err);
-    // });
+    axios.post(`${config.servicesUrls.sync_retrieval_service}/sync/collection`, form)
+    .then(res =>{ 
+        console.log(res.data);
+    })
+    .catch(err =>{
+        console.log(err);
+    });
 }
 
 module.exports = mongoose.model('Subscription', subscriptionSchema);

@@ -28,6 +28,7 @@ const servicesUrls = {
     user_service: 'http://localhost:3007',
     tp_ep_core_service: 'http://localhost:3001',
     billing_history_service: 'http://10.0.1.88:3008',
+    sync_retrieval_service: 'http://10.0.1.88:3009',
     core_service: 'http://localhost:3000',
     message_service: 'http://localhost:3003'
 }
