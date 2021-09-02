@@ -38,6 +38,11 @@ const subscriptionSchema = new Schema({
     is_affiliation_callback_executed: { type : Boolean, default: false },
     should_affiliation_callback_sent: Boolean,
 
+    // priority 0 means no priority has been set so far.
+    // priority 1 for high and
+    // priority 2 for low
+    priority: { type: Number, default: 0, index: true },
+
     queued: { type: Boolean, default: false },
 
     try_micro_charge_in_next_cycle: { type: Boolean, default: false },
