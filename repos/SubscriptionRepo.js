@@ -15,10 +15,18 @@ class SubscriptionRepository {
             if(!postData.payment_source || postData.payment_source === 'null') postData.payment_source = 'telenor';
 
             let subscription = new Subscription(postData);
+
+            let localDate = this.setDateWithTimezone(new Date());
+            subscription.added_dtm = localDate;
+
             result = await subscription.save();
             return result;
         }
     }
+    setDateWithTimezone(date){
+        return new Date(date.toLocaleString("en-US", {timeZone: "Asia/Karachi"}));
+    }
+
 
     async getSubscription (subscription_id)  {
         let result = await Subscription.findOne({_id: subscription_id});
@@ -111,7 +119,9 @@ class SubscriptionRepository {
     
     async updateSubscription (subscription_id, postData)  {
         const query = { _id: subscription_id };
-        postData.last_modified = new Date();
+        
+        let localDate = this.setDateWithTimezone(new Date());
+        postData.last_modified = localDate;
     
         try {
             const result = await Subscription.findOneAndUpdate(query, postData, {new: true});
