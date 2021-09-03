@@ -281,7 +281,8 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					}
 				}else{
 					// comedy paywall
-					try {
+					res.send({code: config.codes.code_success, message: 'Comedy subscriptions are not allowed', gw_transaction_id: gw_transaction_id});
+					/*try {
 						let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 						if(result.message === "success"){
 							res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', 
@@ -294,7 +295,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					} catch(err){
 						console.log("Error while direct billing first time",err.message,user.msisdn);
 						res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
-					}
+					}*/
 				}
 
 				if (sendTrialMessage === true) {
@@ -315,7 +316,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					console.log("Subscription Message Text",text,user.msisdn);
 					messageRepo.sendMessageDirectly(text, user.msisdn);
 				} else if(sendChargingMessage === true) {
-					let trial_hours = packageObj.trial_hours;
 					let message = constants.subscription_messages_direct[packageObj._id];
 					message= message.replace("%price%",packageObj.display_price_point)
 					message= message.replace("%user_id%",subscriptionObj.user_id)
@@ -326,8 +326,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 				
 					console.log("Subscription Message Text", message, user.msisdn);
 					messageRepo.sendMessageDirectly(message, user.msisdn);
-				}else {
-					console.log("Not sending message",user.msisdn);
 				}
 			}else {
 				if(subscription.active === true){
@@ -475,7 +473,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						res.send({code: config.codes.code_already_in_queue, message: 'The user is already in queue for processing.', gw_transaction_id: gw_transaction_id});
 					}
 				}else{
-					res.send({code: config.codes.code_error, message: 'This user is is not active user.', gw_transaction_id: gw_transaction_id});
+					res.send({code: config.codes.code_error, message: 'The susbcriber is not active.', gw_transaction_id: gw_transaction_id});
 				}
 			}
 		} else {
@@ -489,8 +487,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 
 	console.log("warning", "trial sub obj", subscriptionObj);
-
-	let nexBilling = new Date();
+	
 	let trial_hours = packageObj.trial_hours;
 	if (subscriptionObj.source === 'daraz'){
 		trial_hours = 30;
