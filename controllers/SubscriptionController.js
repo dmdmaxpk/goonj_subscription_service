@@ -894,7 +894,7 @@ exports.ccd_unsubscribe = async(req, res) => {
 					let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
 
 					let history = {};
-					history.user_id = subscriber.user_id;
+					history.user_id = subscription.user_id;
 					history.subscription_id = subscription._id;
 					history.package_id = subscription.subscribed_package_id;
 					history.paywall_id = packageObj.paywall_id;
