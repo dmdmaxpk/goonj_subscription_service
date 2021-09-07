@@ -882,42 +882,44 @@ exports.ccd_unsubscribe = async(req, res) => {
 						subscriptionsToUnsubscribe.push(subscriptions[i]);
 					}
 				}
+
+				if(subscriptionsToUnsubscribe.length > 0){
+					let unsubscribed = 0;
+					for (let i =0 ; i < subscriptionsToUnsubscribe.length; i++) {
+						let subscription = subscriptions[i];
+	
+						let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
+	
+						let history = {};
+						history.user_id = subscription.user_id;
+						history.subscription_id = subscription._id;
+						history.package_id = subscription.subscribed_package_id;
+						history.paywall_id = packageObj.paywall_id;
+						history.billing_status = 'expired';
+						history.source = source ? source : 'ccp_api';
+						history.operator = 'telenor';
+	
+						unsubscribed += 1;
+	
+						expire_ccd_subscription(subscription, user.msisdn, history);
+					}
+	
+					if(subscriptionsToUnsubscribe.length === unsubscribed){
+						res.send({message: "Requested subscriptions has unsubscribed!", gw_transaction_id: gw_transaction_id});
+					}else{
+						res.send({message: "Failed to unsubscribe!", gw_transaction_id: gw_transaction_id});
+					}
+				}else{
+					if(alreadyUnsubscribed > 0){
+						res.send({message: "Dear customer, you are not a subscribed user", gw_transaction_id: gw_transaction_id});
+					}else{
+						res.send({message: "This service is not active at your number", gw_transaction_id: gw_transaction_id});
+					}
+				}
+
+
 			}else{
 				res.send({message: "Invalid slug provided!", gw_transaction_id: gw_transaction_id});
-			}
-
-			if(subscriptionsToUnsubscribe.length > 0){
-				let unsubscribed = 0;
-				for (let i =0 ; i < subscriptionsToUnsubscribe.length; i++) {
-					let subscription = subscriptions[i];
-
-					let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
-
-					let history = {};
-					history.user_id = subscription.user_id;
-					history.subscription_id = subscription._id;
-					history.package_id = subscription.subscribed_package_id;
-					history.paywall_id = packageObj.paywall_id;
-					history.billing_status = 'expired';
-					history.source = source ? source : 'ccp_api';
-					history.operator = 'telenor';
-
-					unsubscribed += 1;
-
-					expire_ccd_subscription(subscription, user.msisdn, history);
-				}
-
-				if(subscriptionsToUnsubscribe.length === unsubscribed){
-					res.send({message: "Requested subscriptions has unsubscribed!", gw_transaction_id: gw_transaction_id});
-				}else{
-					res.send({message: "Failed to unsubscribe!", gw_transaction_id: gw_transaction_id});
-				}
-			}else{
-				if(alreadyUnsubscribed > 0){
-					res.send({message: "Dear customer, you are not a subscribed user", gw_transaction_id: gw_transaction_id});
-				}else{
-					res.send({message: "This service is not active at your number", gw_transaction_id: gw_transaction_id});
-				}
 			}	
 		}else{
 			res.send({message: "This service is not active at your number", gw_transaction_id: gw_transaction_id});
