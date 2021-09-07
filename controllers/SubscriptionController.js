@@ -866,6 +866,11 @@ exports.unsubscribe = async (req, res) => {
 exports.ccd_unsubscribe = async(req, res) => {
 	try{
 		let {gw_transaction_id, msisdn, slug, source} = req.body;
+
+		if(slug === undefined){
+			slug = 'all';
+		}
+
 		let user  = await userRepo.getUserByMsisdn(msisdn);
 		
 		let subscriptionsToUnsubscribe = [];
