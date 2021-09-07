@@ -11,7 +11,7 @@ router.route('/unsubscribe')
 router.route('/sms-unsub').post(controller.unsubscribe);
 
 router.route('/ccd-unsubscribe')
-    .post(controller.unsubscribe);
+    .post(controller.ccd_unsubscribe);
 
 router.route('/status').post(controller.status);
 

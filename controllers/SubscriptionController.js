@@ -12,6 +12,7 @@ const constants = container.resolve("constants");
 
 const helper = require('../helper/helper');
 const  _ = require('lodash');
+const { use } = require('../routes');
 
 exports.getSubscriptionDetails = async(req, res) => {
 	let { msisdn, transaction_id } = req.query;
@@ -787,8 +788,6 @@ exports.unsubscribe = async (req, res) => {
 				subscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
 			}
 
-			console.log("subscription obj", subscriptions);
-
 			let unSubCount = 0;
 
 			if(subscriptions.length > 0){
@@ -818,7 +817,7 @@ exports.unsubscribe = async (req, res) => {
 					history.package_id = packageObj._id;
 					history.subscription_id = subscription._id;
 					history.billing_status = 'unsubscribe-request-received-and-expired';
-					history.source = source ? source : "na";
+					history.source = source ? source : subscription.source;
 					history.operator = user.operator;
 					result = await billingHistoryRepo.createBillingHistory(history);
 	
@@ -862,6 +861,106 @@ exports.unsubscribe = async (req, res) => {
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid user/msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
+}
+
+exports.ccd_unsubscribe = async(req, res) => {
+	try{
+		let {gw_transaction_id, msisdn, slug, source} = req.body;
+		let user  = await userRepo.getUserByMsisdn(msisdn);
+		
+		let subscriptionsToUnsubscribe = [];
+		
+		if(user){
+			let subscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
+			let alreadyUnsubscribed = 0;
+
+			if(slug && (slug === "all" || slug === "live")){
+				for (let i =0 ; i < subscriptions.length; i++) {
+					if(subscriptions[i].subscription_status === 'expired'){
+						alreadyUnsubscribed += 1;   
+					}else{
+						subscriptionsToUnsubscribe.push(subscriptions[i]);
+					}
+				}
+			}else{
+				res.send({message: "Invalid slug provided!", gw_transaction_id: gw_transaction_id});
+			}
+
+			if(subscriptionsToUnsubscribe.length > 0){
+				let unsubscribed = 0;
+				for (let i =0 ; i < subscriptionsToUnsubscribe.length; i++) {
+					let subscription = subscriptions[i];
+
+					let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
+
+					let history = {};
+					history.user_id = subscriber.user_id;
+					history.subscription_id = subscription._id;
+					history.package_id = subscription.subscribed_package_id;
+					history.paywall_id = packageObj.paywall_id;
+					history.billing_status = 'expired';
+					history.source = source ? source : 'ccp_api';
+					history.operator = 'telenor';
+
+					unsubscribed += 1;
+
+					expire_ccd_subscription(subscription, user.msisdn, history);
+				}
+
+				if(subscriptionsToUnsubscribe.length === unsubscribed){
+					res.send({message: "Requested subscriptions has unsubscribed!", gw_transaction_id: gw_transaction_id});
+				}else{
+					res.send({message: "Failed to unsubscribe!", gw_transaction_id: gw_transaction_id});
+				}
+			}else{
+				if(alreadyUnsubscribed > 0){
+					res.send({message: "Dear customer, you are not a subscribed user", gw_transaction_id: gw_transaction_id});
+				}else{
+					res.send({message: "This service is not active at your number", gw_transaction_id: gw_transaction_id});
+				}
+			}	
+		}else{
+			res.send({message: "This service is not active at your number", gw_transaction_id: gw_transaction_id});
+		}
+	}catch(err){
+		console.log("=>", err);
+		res.send({message: "Error occured", gw_transaction_id: gw_transaction_id});
+	}
+}
+
+expire_ccd_subscription = async(subscription, msisdn, history) => {
+	return new Promise(async (resolve,reject) => {
+		try {
+			if (subscription) {
+				await subscriptionRepo.updateSubscription(subscription._id, {
+					auto_renewal: false, 
+					consecutive_successive_bill_counts: 0,
+					is_allowed_to_stream: false,
+					is_billable_in_this_cycle: false,
+					queued: false,
+					try_micro_charge_in_next_cycle: false,
+					micro_price_point: 0,
+					last_subscription_status: subscription.subscription_status,
+					subscription_status: "expired",
+					priority: 0,
+					amount_billed_today: 0
+				});
+				
+				await billingHistoryRepo.createBillingHistory(history);
+	
+				// send sms to user
+				let text = `Apki Goonj TV per Live TV Weekly ki subscription khatm kr di gai ha. Phr se subscribe krne k lye link par click karen https://www.goonj.pk/ `;
+				messageRepo.sendMessageDirectly(text, msisdn);
+
+				resolve("Succesfully unsubscribed");
+			} else {
+				resolve("Subscription id not found");
+			}
+		} catch (err) {
+			console.error(err);
+			reject(err);
+		}
+	});
 }
 
 // Expire subscription
