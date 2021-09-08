@@ -36,7 +36,7 @@ const subscriptionSchema = new Schema({
 
     // Affiliation marketing fields
     affiliate_unique_transaction_id: {type:String},
-    affiliate_mid: {type:String},
+    affiliate_mid: {type:String, index: true},
     is_affiliation_callback_executed: { type : Boolean, default: false },
     should_affiliation_callback_sent: Boolean,
 

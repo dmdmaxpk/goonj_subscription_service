@@ -28,7 +28,7 @@ class SubscriptionRepository {
     }
 
     async getAffiliateSubscriptions(mid, from, to){
-        if(to == undefined){
+        if(to === undefined){
             return await Subscription.find({
                 affiliate_mid: mid, added_dtm:{$gt: new Date(from)}
             });
