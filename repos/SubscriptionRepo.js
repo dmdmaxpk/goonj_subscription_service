@@ -29,14 +29,20 @@ class SubscriptionRepository {
 
     async getAffiliateSubscriptions(mid, from, to){
         if(to === undefined){
-            return await Subscription.find({
-                affiliate_mid: mid, added_dtm:{$gt: new Date(from)}
-            });
+            return await Subscription.aggregate([
+                {$match: {
+                    affiliate_mid: mid, added_dtm:{$gt: new Date(from)}
+                }},
+                {$group: {_id: "$subscription_status", count: {$sum: 1}}}
+            ]);
         }else{
-            return await Subscription.find({
-                affiliate_mid: mid, 
-                $and:[{added_dtm:{$gt: new Date(from)}},{added_dtm:{$lt: new Date(to)}}]
-            });
+            return await Subscription.aggregate([
+                {$match:{
+                    affiliate_mid: mid, 
+                    $and:[{added_dtm:{$gt: new Date(from)}},{added_dtm:{$lt: new Date(to)}}]
+                }},
+                {$group: {_id: "$subscription_status", count: {$sum: 1}}}
+        ]);
         }
     }
 
