@@ -1017,3 +1017,13 @@ exports.getPackagesOfSubscriber = async (req, res) => {
 	let result = await subscriptionRepo.getPackagesOfSubscriber(postData.user_id);
 	res.send(result);
 }
+
+exports.count_affiliate_subscriptions = async(req, res) => {
+	let {mid} = req.query;
+	let today = new Date();
+	today.setHours(0, 0, 0, 0);
+
+	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
+	res.status(200).send({count: subscriptions.length});
+
+}

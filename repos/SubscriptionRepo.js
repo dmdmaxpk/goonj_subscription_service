@@ -27,6 +27,18 @@ class SubscriptionRepository {
         return new Date(date.toLocaleString("en-US", {timeZone: "Asia/Karachi"}));
     }
 
+    async getAffiliateSubscriptions(mid, from, to){
+        if(to == undefined){
+            return await Subscription.find({
+                affiliate_mid: mid, added_dtm:{$gt: new Date(from)}
+            });
+        }else{
+            return await Subscription.find({
+                affiliate_mid: mid, 
+                $and:[{added_dtm:{$gt: new Date(from)}},{added_dtm:{$lt: new Date(to)}}]
+            });
+        }
+    }
 
     async getSubscription (subscription_id)  {
         let result = await Subscription.findOne({_id: subscription_id});
