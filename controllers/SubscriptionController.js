@@ -1026,6 +1026,6 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	console.log('### Today', today, mid);
 
 	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
-	res.status(200).send({count: subscriptions.length});
+	res.status(200).send(subscriptions);
 
 }
