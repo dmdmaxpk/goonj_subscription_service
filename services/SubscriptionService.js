@@ -214,7 +214,7 @@ class SubscriptionService {
     }
 
 
-    readFileSync = async (jsonPath) => {
+    async readFileSync(jsonPath) {
         return new Promise((resolve, reject) => {
             try{
                 const readInterface = readline.createInterface({
