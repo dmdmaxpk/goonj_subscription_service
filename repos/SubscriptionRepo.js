@@ -61,6 +61,11 @@ class SubscriptionRepository {
         return result;
     }
 
+    async getOneSubscription(user_id)  {
+        let result = await Subscription.findOne({user_id: user_id});
+        return result;
+    }
+
     async getAllActiveSubscriptions(user_id)  {
         let result = await Subscription.find({user_id: user_id, $or: [{subscription_status: "trial"}, {subscription_status: "billed"}, {subscription_status: "graced"}]});
         return result;

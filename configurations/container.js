@@ -12,6 +12,7 @@ const TpEpCoreRepo = require('../repos/TpEpCoreRepo');
 
 // Services
 const BillingService = require('../services/billingService');
+const SubscriptionService = require('../services/SubscriptionService');
 
 const Constants = require('./constants');
 //scripts
@@ -28,6 +29,7 @@ container.register({
 
     //Services
     billingService : awilix.asClass(BillingService).singleton(),
+    subscriptionService : awilix.asClass(SubscriptionService).singleton(),
     // constants:
     constants: awilix.asClass(Constants).singleton()
   });
