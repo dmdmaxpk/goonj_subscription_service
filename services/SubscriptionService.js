@@ -258,9 +258,11 @@ class SubscriptionService {
                     console.log('msisdn', inputData[i]);
 
                     let user = await this.userRepository.getUserByMsisdn(inputData[i]);
-                    
-                    if(user){
-                        console.log("length", i);
+                    if(!user){
+                        console.log("user doesn't exist")
+                    }
+                    else{
+                        console.log("user exists")
                         let subscription = await this.subscriptionRepository.getOneSubscription(user._id ? user._id : '');
                         let expireSub = await this.subscriptionRepository.updateSubscription(subscription._id, {subscription_status: 'expired'});
                         console.log(expireSub);
