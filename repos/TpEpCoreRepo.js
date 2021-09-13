@@ -11,7 +11,7 @@ class TpEpCoreRepository{
         let transaction_id = subscriptionObj.payment_source == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + '_' + nanoid(10);
         let ep_token = subscriptionObj.ep_token ? subscriptionObj.ep_token : undefined;
         let partner_id = undefined;
-        let source = subscriptionObj.source;
+        let source = user.source;
 
         if(first_time_billing === true){
             if(source == 'app'){
