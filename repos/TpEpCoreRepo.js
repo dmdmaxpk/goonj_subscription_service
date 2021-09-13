@@ -10,41 +10,8 @@ class TpEpCoreRepository{
     async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing, micro){
         let transaction_id = subscriptionObj.payment_source == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + '_' + nanoid(10);
         let ep_token = subscriptionObj.ep_token ? subscriptionObj.ep_token : undefined;
-        let partner_id = undefined;
-        let source = subscriptionObj.source;
 
-        if(first_time_billing === true){
-            if(packageObj._id == 'QDfC' && source == 'app'){
-                partner_id = packageObj.new_partner_id[0]
-            }
-            else if(packageObj._id == 'QDfC' && source != 'app'){
-                partner_id = packageObj.new_partner_id[1]
-            }
-            else if(packageObj._id == 'QDfG' && source == 'app'){
-                partner_id = packageObj.new_partner_id[0]
-            }
-            else if(packageObj._id == 'QDfG' && source != 'app'){
-                partner_id = packageObj.new_partner_id[1]
-            }
-        }
-        else{
-            if(packageObj._id == 'QDfC' && source == 'app'){
-                partner_id = packageObj.new_partner_id[2]
-            }
-            else if(packageObj._id == 'QDfC' && source != 'app'){
-                partner_id = packageObj.new_partner_id[3]
-            }
-            else if(packageObj._id == 'QDfG' && source == 'app'){
-                partner_id = packageObj.new_partner_id[2]
-            }
-            else if(packageObj._id == 'QDfG' && source != 'app'){
-                partner_id = packageObj.new_partner_id[3]
-            }
-        }
-
-        console.log("partner_id", partner_id);
-
-        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: partner_id, ep_token})
+        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: packageObj.partner_id, ep_token})
         .then(async(res) =>{ 
             let response = res.data;
 
