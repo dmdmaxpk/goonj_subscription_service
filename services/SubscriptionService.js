@@ -1,5 +1,10 @@
 const config = require("../config");
 
+const path = require('path');
+const readline = require('readline');
+const fs = require('fs');
+
+
 class SubscriptionService {
     constructor({subscriptionRepository, userRepository, coreRepository, billingHistoryRepository, messageRepository}) {
         this.subscriptionRepository = subscriptionRepository;
@@ -206,6 +211,76 @@ class SubscriptionService {
             }
             
         });
+    }
+
+
+    async readFileSync(jsonPath) {
+        return new Promise((resolve, reject) => {
+            try{
+                const readInterface = readline.createInterface({
+                    input: fs.createReadStream(jsonPath)
+                });
+                let inputData = [];
+                let counter = 0;
+                readInterface.on('line', function(line) {
+                    console.log(line)
+                    if(line.startsWith("92")){
+                        line = line.replace('92', '0');
+                    }else if(line.startsWith("3")){
+                        line = "0" + line;
+                    }
+    
+                    inputData.push(line);
+                    counter += 1;
+                    console.log("### read", counter);
+                });
+        
+                readInterface.on('close', function(line) {
+                    resolve(inputData);
+                });
+            }catch(e){
+                reject(e);
+            }
+        });
+    }
+
+    async report(){
+        console.log("=> unsub msisdns list");
+        let finalResult = [];
+
+        try{
+            var jsonPath = path.join(__dirname, '..', 'msisdn.txt');
+            let inputData = await this.readFileSync(jsonPath);    
+            console.log("### Input Data Length: ", inputData.length);
+
+            for(let i = 0; i < inputData.length; i++){
+                if(inputData[i] && inputData[i].length === 11){
+                    console.log('msisdn', inputData[i]);
+
+                    let user = await this.userRepository.getUserByMsisdn(inputData[i]);
+                    if(!user){
+                        console.log("user doesn't exist")
+                    }
+                    else{
+                        console.log("user exists")
+                        let subscription = await this.subscriptionRepository.getOneSubscription(user._id ? user._id : '');
+                        let expireSub;
+                        if(subscription){
+                            expireSub = await this.subscriptionRepository.updateSubscription(subscription._id, {subscription_status: 'expired'});
+                        }
+                        console.log(expireSub);
+                    }
+
+                        // finalResult.push(singObject);
+                        console.log("### Done ", i);
+                }else{
+                    console.log("### Invalid number or number length");
+                }
+            }
+
+        }catch(e){
+            console.log("### error - ", e);
+        }
     }
     
 }

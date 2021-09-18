@@ -9,6 +9,9 @@ const billingHistoryRepo = container.resolve("billingHistoryRepository");
 const tpEpCoreRepo = container.resolve("tpEpCoreRepository");
 const path = require('path');
 const readline = require('readline');
+
+const subscriptionService = container.resolve("subscriptionService");
+
 const constants = container.resolve("constants");
 const fs = require('fs');
 
@@ -1062,4 +1065,9 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
 	res.status(200).send(subscriptions);
 
+}
+
+exports.report = async(req, res) => {
+	await subscriptionService.report();
+	res.send({message: "executing msisdns unsub"});
 }

@@ -39,7 +39,7 @@ class BillingHistoryRepository {
 
     async getExpiryHistory(user_id){
         console.log('### Sending request', user_id);
-        return await Axios.get(`${config.servicesUrls.sync_retrieval_service}/history/get_expire_history?user_id=${user_id}`)
+        return await Axios.get(`${config.servicesUrls.report_service}/history/get_expire_history?user_id=${user_id}`)
         .then(res =>{ 
             let result = res.data;
             console.log('### Expiry response', result);
