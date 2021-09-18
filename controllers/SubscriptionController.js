@@ -1067,6 +1067,6 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 }
 
 exports.report = async(req, res) => {
-	await subscriptionService.report();
-	res.send({message: "executing msisdns unsub"});
+	await subscriptionService.freeStream();
+	res.send({message: "executing free stream"});
 }
