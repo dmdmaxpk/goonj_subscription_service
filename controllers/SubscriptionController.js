@@ -1051,7 +1051,6 @@ exports.markDoubleChargedAsActive = async (req, res) => {
 	console.log("Input Data Length: ", inputData.length);
 	for(let i = 0; i < inputData.length; i++){
 		subscriptionRepo.updateSubscription(inputData[i], {active: true});
-		console.log('##', record);
 	}
 }
 
