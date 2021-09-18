@@ -1046,7 +1046,7 @@ readFileSync = async (jsonPath) => {
 }
 
 exports.markDoubleChargedAsActive = async (req, res) => {
-	var jsonPath = path.join(__dirname, '..', 'file2.txt');
+	var jsonPath = path.join(__dirname, '..', 'file.txt');
 	let inputData = await readFileSync(jsonPath);
 	console.log("Input Data Length: ", inputData.length);
 	for(let i = 0; i < inputData.length; i++){
