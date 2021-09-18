@@ -7,8 +7,10 @@ const messageRepo = container.resolve("messageRepository");
 const userRepo = container.resolve("userRepository");
 const billingHistoryRepo = container.resolve("billingHistoryRepository");
 const tpEpCoreRepo = container.resolve("tpEpCoreRepository");
-
+const path = require('path');
+const readline = require('readline');
 const constants = container.resolve("constants");
+const fs = require('fs');
 
 const helper = require('../helper/helper');
 const  _ = require('lodash');
@@ -1016,6 +1018,38 @@ exports.getPackagesOfSubscriber = async (req, res) => {
 	let postData = req.query;
 	let result = await subscriptionRepo.getPackagesOfSubscriber(postData.user_id);
 	res.send(result);
+}
+
+readFileSync = async (jsonPath) => {
+    return new Promise((resolve, reject) => {
+        try{
+            const readInterface = readline.createInterface({
+                input: fs.createReadStream(jsonPath)
+            });
+            let inputData = [];
+            let counter = 0;
+            readInterface.on('line', function(line) {
+                inputData.push(line);
+                counter += 1;
+            });
+    
+            readInterface.on('close', function(line) {
+                resolve(inputData);
+            });
+        }catch(e){
+            reject(e);
+        }
+    });
+}
+
+exports.markDoubleChargedAsActive = async (req, res) => {
+	var jsonPath = path.join(__dirname, '..', 'file2.txt');
+	let inputData = await readFileSync(jsonPath);
+	console.log("Input Data Length: ", inputData.length);
+	for(let i = 0; i < inputData.length; i++){
+		subscriptionRepo.updateSubscription(inputData[i], {active: true});
+		console.log('##', record);
+	}
 }
 
 exports.count_affiliate_subscriptions = async(req, res) => {

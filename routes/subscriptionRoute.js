@@ -12,5 +12,6 @@ router.route('/getAllSubs').get(controller.getAllSubscriptions);
 router.route('/recharge').post(controller.recharge);
 router.route('/get-subscription-by-package-id').get(controller.getSubscriptionByPackageId)
 router.route('/get-packages-of-subscriber').get(controller.getPackagesOfSubscriber)
+router.route('/mark-double-charged-as-active').get(controller.markDoubleChargedAsActive)
 
 module.exports = router;
