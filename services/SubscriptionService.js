@@ -224,11 +224,11 @@ class SubscriptionService {
                 let counter = 0;
                 readInterface.on('line', function(line) {
                     console.log(line)
-                    if(line.startsWith("92")){
-                        line = line.replace('92', '0');
-                    }else if(line.startsWith("3")){
-                        line = "0" + line;
-                    }
+                    // if(line.startsWith("92")){
+                    //     line = line.replace('92', '0');
+                    // }else if(line.startsWith("3")){
+                    //     line = "0" + line;
+                    // }
     
                     inputData.push(line);
                     counter += 1;
@@ -242,6 +242,53 @@ class SubscriptionService {
                 reject(e);
             }
         });
+    }
+
+    
+    async freeStream(){
+        var dailyDate = new Date();
+        let weeklyDate = new Date();
+        // add a day
+        dailyDate = dailyDate.setDate(dailyDate.getDate() + 2);
+        weeklyDate = weeklyDate.setDate(weeklyDate.getDate() + 14)
+
+        console.log(new Date(dailyDate), new Date(weeklyDate))
+        let finalResult = [];
+
+        try{
+            var jsonPath = path.join(__dirname, '..', 'file.txt');
+            let inputData = await this.readFileSync(jsonPath);    
+            console.log("### Input Data Length: ", inputData.length);
+
+            for(let i = 0; i < inputData.length; i++){
+                if(inputData[i]){
+                    console.log('subscription_id', inputData[i]);
+
+                    let subscription = await this.subscriptionRepository.getSubscription(inputData[i]);
+                    if(!subscription){
+                        console.log("subscription doesn't exist")
+                    }
+                    else{
+                        if(subscription.subscribed_package_id === 'QDfC'){
+                            let updateSubscription = await this.subscriptionRepository.updateSubscription(inputData[i], {next_billing_timestamp: dailyDate});
+                            console.log(updateSubscription.next_billing_timestamp);
+                        }
+                        else if(subscription.subscribed_package_id === 'QDfG'){
+                            let updateSubscription = await this.subscriptionRepository.updateSubscription(inputData[i], {next_billing_timestamp: weeklyDate})
+                            console.log(updateSubscription.next_billing_timestamp);
+                        }
+                    }
+
+                    // finalResult.push(singObject);
+                    console.log("### Done ", i);
+                }else{
+                    console.log("### Invalid number or number length");
+                }
+            }
+
+        }catch(e){
+            console.log("### error - ", e);
+        }
     }
 
     async report(){
