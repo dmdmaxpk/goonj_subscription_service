@@ -20,33 +20,33 @@ class TpEpCoreRepository{
             else if(source != 'app'){
                 partner_id = packageObj.new_partner_id[1]
             }
-            else{
-                if(source == 'app'){
-                    partner_id = packageObj.new_partner_id[2]
-                }
-                else if(source != 'app'){
-                    partner_id = packageObj.new_partner_id[3]
-                }
-            }
-
-            console.log("partner_id", partner_id);
-
-            return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: partner_id, ep_token})
-            .then(async(res) =>{ 
-                let response = res.data;
-
-                console.log("warning", "resonpse obj", response)
-                if(response.message === "success"){
-                    await this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
-                }else if(response.message === 'failed'){
-                    await this.billingService.billingFailed(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
-                }
-                return response
-            })
-            .catch(err =>{
-                return err
-            })
         }
+        else{
+            if(source == 'app'){
+                partner_id = packageObj.new_partner_id[2]
+            }
+            else if(source != 'app'){
+                partner_id = packageObj.new_partner_id[3]
+            }
+        }
+
+        console.log("partner_id", partner_id);
+
+        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: partner_id, ep_token})
+        .then(async(res) =>{ 
+            let response = res.data;
+
+            console.log("warning", "resonpse obj", response)
+            if(response.message === "success"){
+                await this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
+            }else if(response.message === 'failed'){
+                await this.billingService.billingFailed(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
+            }
+            return response
+        })
+        .catch(err =>{
+            return err
+        })
     }
 
     async subscriberQuery(msisdn){
