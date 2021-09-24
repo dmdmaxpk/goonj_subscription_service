@@ -74,7 +74,6 @@ class BillingService{
                         updatedSubscription.affiliate_mid,
                         user,
                         updatedSubscription._id,
-                        updatedSubscription.subscriber_id,
                         packageObj._id,
                         packageObj.paywall_id
                         );
