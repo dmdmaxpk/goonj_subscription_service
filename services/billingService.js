@@ -74,7 +74,6 @@ class BillingService{
                         updatedSubscription.affiliate_mid,
                         user,
                         updatedSubscription._id,
-                        updatedSubscription.subscriber_id,
                         packageObj._id,
                         packageObj.paywall_id
                         );
@@ -113,7 +112,7 @@ class BillingService{
         history.micro_charge = micro !== undefined ? micro : false;
         history.price = packageObj.price_point_pkr;
         history.source = subscription.source ? subscription.source : checkSubscription.source;
-        history.subscription_id = checkSubscription._id;
+        if(checkSubscription) history.subscription_id = checkSubscription._id;
         history.paywall_id = packageObj.paywall_id;
         history.package_id = packageObj._id;
         history.transaction_id = transaction_id;

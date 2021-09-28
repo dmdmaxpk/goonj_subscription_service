@@ -1,4 +1,5 @@
 const Axios = require('axios');
+const Helper = require('../helper/helper');
 const config = require('../config');
 
 const RabbitMq = require('../rabbit/BillingHistoryRabbitMq');
@@ -33,6 +34,8 @@ class BillingHistoryRepository {
 
 
     async createBillingHistory(history){
+        history.billing_dtm = Helper.setDateWithTimezone(new Date())
+        
         console.log('$$:',JSON.stringify(history),':$$');
         await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
     }
