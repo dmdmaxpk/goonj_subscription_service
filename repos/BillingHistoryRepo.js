@@ -8,7 +8,6 @@ const rabbitMq = new RabbitMq().getInstance();
 class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {
         let history = {};
-        history.billing_dtm = Helper.setDateWithTimezone(new Date())
         history.user_id = user._id;
         history.msisdn = user.msisdn;
         history.subscription_id = subscription._id;
@@ -35,6 +34,8 @@ class BillingHistoryRepository {
 
 
     async createBillingHistory(history){
+        history.billing_dtm = Helper.setDateWithTimezone(new Date())
+        
         console.log('$$:',JSON.stringify(history),':$$');
         await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
     }

@@ -342,7 +342,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 
 					if(subscription.queued === false){
 						let history = {};
-        				history.billing_dtm = helper.setDateWithTimezone(new Date())
 						history.user_id = user._id;
 						history.msisdn = user.msisdn;
 						history.subscription_id = subscription._id;
@@ -817,7 +816,6 @@ exports.unsubscribe = async (req, res) => {
 					});
 					
 					let history = {};
-					history.billing_dtm = helper.setDateWithTimezone(new Date())
 					history.user_id = user._id;
 					history.msisdn = user.msisdn;
 					history.paywall_id = packageObj.paywall_id;
@@ -903,7 +901,6 @@ exports.ccd_unsubscribe = async(req, res) => {
 						let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
 	
 						let history = {};
-						history.billing_dtm = helper.setDateWithTimezone(new Date())
 						history.user_id = subscription.user_id;
 						history.subscription_id = subscription._id;
 						history.package_id = subscription.subscribed_package_id;
@@ -996,7 +993,6 @@ exports.expire = async (req, res) => {
 		
 		
 		let history = {};
-        history.billing_dtm = helper.setDateWithTimezone(new Date())
 		history.user_id = user._id;
 		history.msisdn = user.msisdn;
 		history.paywall_id = packageObj.paywall_id;
