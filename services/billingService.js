@@ -84,6 +84,7 @@ class BillingService{
         
         let history = {};
         history.micro_charge = (updatedSubscription  && updatedSubscription.try_micro_charge_in_next_cycle) ? updatedSubscription.try_micro_charge_in_next_cycle : false;
+        history.billing_dtm = Helper.setDateWithTimezone(new Date())
         history.user_id = user._id;
         history.msisdn = user.msisdn;
         history.subscription_id =  updatedSubscription ? updatedSubscription._id : subscription._id ;
@@ -107,6 +108,7 @@ class BillingService{
 
         // Add history record
         let history = {};
+        history.billing_dtm = Helper.setDateWithTimezone(new Date())
         history.user_id = user._id;
         history.msisdn = user.msisdn;
         history.micro_charge = micro !== undefined ? micro : false;
@@ -127,6 +129,7 @@ class BillingService{
         let combinedId = tid + "*" +mid;
 
         let history = {};
+        history.billing_dtm = Helper.setDateWithTimezone(new Date())
         history.user_id = user._id;
         history.msisdn = user.msisdn;
         history.paywall_id = paywall_id;
