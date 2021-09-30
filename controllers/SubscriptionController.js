@@ -630,7 +630,7 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 reSubscribe = async(subscription, history) => {
 	let dataToUpdate = {};
 	dataToUpdate.auto_renewal = true;
-	dataToUpdate.subscription_status = "billed";
+	dataToUpdate.subscription_status = subscription.last_subscription_status;
 	dataToUpdate.is_allowed_to_stream = true;
 
 	let update = await subscriptionRepo.updateSubscription(subscription._id, dataToUpdate);
