@@ -628,7 +628,6 @@ doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user,
 }
 
 reSubscribe = async(subscription, history) => {
-	console.log("warning", "last_subscription_status", subscription.last_subscription_status)
 	let dataToUpdate = {};
 	dataToUpdate.auto_renewal = true;
 	dataToUpdate.subscription_status = subscription.last_subscription_status;
