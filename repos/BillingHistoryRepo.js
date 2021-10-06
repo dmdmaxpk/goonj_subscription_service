@@ -5,6 +5,9 @@ const config = require('../config');
 const RabbitMq = require('../rabbit/BillingHistoryRabbitMq');
 const rabbitMq = new RabbitMq().getInstance();
 
+const LocalRabbitMq = require('../rabbit/RabbitMq');
+const localRabbitMq = new LocalRabbitMq().getInstance();
+
 class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {
         let history = {};
@@ -38,6 +41,7 @@ class BillingHistoryRepository {
         
         console.log('$$:',JSON.stringify(history),':$$');
         await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
+        await localRabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
     }
 
     async getExpiryHistory(user_id){
