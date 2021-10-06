@@ -40,7 +40,6 @@ class BillingHistoryRepository {
 
     async createBillingHistory(history){
         var objectId = new ObjectID();
-        console.log("mongo object id", objectId);
         
         history._id = objectId;
         history.billing_dtm = Helper.setDateWithTimezone(new Date())
