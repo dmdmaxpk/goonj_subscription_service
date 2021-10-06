@@ -37,6 +37,11 @@ class BillingHistoryRepository {
 
 
     async createBillingHistory(history){
+        var ObjectID = require('mongodb').ObjectID;
+        var objectId = new ObjectID();
+        console.log("mongo object id", objectId);
+        
+        history._id = objectId;
         history.billing_dtm = Helper.setDateWithTimezone(new Date())
         
         console.log('$$:',JSON.stringify(history),':$$');
