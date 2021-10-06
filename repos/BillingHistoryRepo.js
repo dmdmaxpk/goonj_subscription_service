@@ -8,6 +8,8 @@ const rabbitMq = new RabbitMq().getInstance();
 const LocalRabbitMq = require('../rabbit/RabbitMq');
 const localRabbitMq = new LocalRabbitMq().getInstance();
 
+var ObjectID = require('mongodb').ObjectID;
+
 class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response, billingStatus, response_time, transaction_id, micro_charge, price) {
         let history = {};
@@ -37,7 +39,6 @@ class BillingHistoryRepository {
 
 
     async createBillingHistory(history){
-        var ObjectID = require('mongodb').ObjectID;
         var objectId = new ObjectID();
         console.log("mongo object id", objectId);
         
