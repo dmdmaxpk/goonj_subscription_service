@@ -674,7 +674,7 @@ exports.recharge = async (req, res) => {
 
 // Check status
 exports.status = async (req, res) => {
-	console.log('request logs', req);
+	// console.log('request logs', req);
 
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let user = undefined;
