@@ -21,16 +21,12 @@ const { use } = require('../routes');
 
 exports.getSubscriptionDetails = async(req, res) => {
 	let { msisdn, transaction_id } = req.query;
-	console.log('### Query:', req.query)
 
 	let obj = {};
 	if (msisdn) {
 		let user = await userRepo.getUserByMsisdn(msisdn);
-		console.log('### User', user)
 		if(user) {
-			console.log('### User found', user);
 			let rawSubscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
-			console.log('### Subscriptions', rawSubscriptions);
 			let subscriptions = [];
 			if(rawSubscriptions){
 				for(let i = 0; i < rawSubscriptions.length; i++){
@@ -48,27 +44,21 @@ exports.getSubscriptionDetails = async(req, res) => {
 				}
 				obj.subscriptions = subscriptions;
 				let expiryArray = await getExpiry(user._id);
-				console.log('### Expiry', expiryArray);
 				obj.expiry = expiryArray;
-				console.log('### Final', obj);
 				res.send({code: config.codes.code_success, data: obj,gw_transaction_id:transaction_id});
 			}else{
 				res.send({code: config.codes.code_data_not_found, message: 'No Subscription Found',gw_transaction_id:transaction_id});
 			}
 		}else{
-			console.log('### No User', msisdn);
 			res.send({code: config.codes.code_data_not_found, message: 'User not found',gw_transaction_id:transaction_id});
 		}
 	} else {
-		console.log('### No msisdn provided');
 		res.send({code: config.codes.code_invalid_data_provided, message: 'No msisdn provided',gw_transaction_id:transaction_id});
 	}
 }
 
 getExpiry = async(user_id) => {
-	console.log('### Raw history request', user_id);
 	let rawHistories = await billingHistoryRepo.getExpiryHistory(user_id);
-	console.log('### Raw history', rawHistories);
 
 	if(rawHistories.length >= 2){
 		rawHistories.sort(function(a,b){
@@ -1058,8 +1048,6 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	let {mid} = req.query;
 	let today = new Date();
 	today.setHours(0, 0, 0, 0);
-
-	console.log('### Today', today, mid);
 
 	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
 	res.status(200).send(subscriptions);

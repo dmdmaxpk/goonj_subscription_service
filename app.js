@@ -17,7 +17,7 @@ console.log('Mongo connected');
 // Middlewares
 app.use(bodyParser.json({limit: '5120kb'}));  //5MB
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(logger());
+app.use(logger('combined'));
 
 // Import routes
 app.use('/', require('./routes/index'));
