@@ -60,6 +60,8 @@ const subscriptionSchema = new Schema({
     payment_source: { type: String, index: true, default: "telenor" },
     ep_token: { type: String },
     active: { type: Boolean, default: true, index: true },
+    user_agent: { type: String },
+    ip_address: { type: String },
     last_modified: Date,
     added_dtm: { type: Date, default: Date.now, index: true }
 }, { strict: true });

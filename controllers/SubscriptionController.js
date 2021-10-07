@@ -175,6 +175,7 @@ exports.subscribe = async (req, res) => {
 }
 
 doSubscribe = async(req, res, user, gw_transaction_id) => {
+	let headers = req.headers;
 	if(user && user.active === true && user.is_black_listed === false){
 		
 		let newPackageId = req.body.package_id;
@@ -190,6 +191,8 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 				subscriptionObj.subscribed_package_id = newPackageId;
 				subscriptionObj.source = req.body.source ?  req.body.source : 'unknown';
 				subscriptionObj.payment_source = req.body.payment_source ? req.body.payment_source : "telenor";
+				subscriptionObj.user_agent = headers['user-agent'];
+				subscriptionObj.ip_address = headers.host;
 
 				// First check, if there is any other subscription of the same subscriber having payment source easypaisa and having ep token
 				let alreadyEpSubscriptionsAvailable = await subscriptionRepo.getSubscriptionHavingPaymentSourceEP(user._id);
