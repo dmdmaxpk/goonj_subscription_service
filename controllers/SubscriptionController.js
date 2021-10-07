@@ -121,6 +121,7 @@ login = async(user_id) => {
 
 // Subscribe against a package
 exports.subscribe = async (req, res) => {
+	console.log("warning", "headers", req.headers);
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
 	console.log("decoded: ", decodedResponse)
