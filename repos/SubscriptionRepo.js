@@ -4,7 +4,6 @@ const moment = require("moment");
 class SubscriptionRepository {
 
     async createSubscription (postData)  {
-        console.log('creating subscription', postData);
         let result = await this.getSubscriptionByPaywallId(postData.user_id, postData.paywall_id);
         if(result){
             let data = "Already exist subscription record with user id "+ postData.user_id +" having package id "+ postData.subscribed_package_id;
@@ -167,7 +166,6 @@ class SubscriptionRepository {
                 {_id: {$in: subscriptionArray}},
                 { $set: postData  }
             )
-            console.log("updated subs result", result);
         } catch(error) {
             console.log(error);
             return error;

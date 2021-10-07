@@ -60,7 +60,6 @@ class BillingService{
             }
             
             let updatedSubscription = await this.subscriptionRepository.createSubscription(subscription);
-            console.log("updated sub", updatedSubscription);
 
             // Check for the affiliation callback
             if( updatedSubscription.affiliate_unique_transaction_id && 
