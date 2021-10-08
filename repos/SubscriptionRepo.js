@@ -4,7 +4,6 @@ const moment = require("moment");
 class SubscriptionRepository {
 
     async createSubscription (postData)  {
-        console.log('creating subscription', postData);
         let result = await this.getSubscriptionByPaywallId(postData.user_id, postData.paywall_id);
         if(result){
             let data = "Already exist subscription record with user id "+ postData.user_id +" having package id "+ postData.subscribed_package_id;
@@ -147,7 +146,11 @@ class SubscriptionRepository {
         postData.last_modified = localDate;
     
         try {
-            const result = await Subscription.findOneAndUpdate(query, postData, {new: true});
+            console.log('updateSubscription - query: ', query);
+            console.log('updateSubscription - postData: ', postData);
+            const result = await Subscription.findOneAndUpdate(query, postData, {new: true, useFindAndModify: false});
+            console.log('updateSubscription - postData: ', result);
+
             if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
@@ -167,7 +170,6 @@ class SubscriptionRepository {
                 {_id: {$in: subscriptionArray}},
                 { $set: postData  }
             )
-            console.log("updated subs result", result);
         } catch(error) {
             console.log(error);
             return error;
@@ -197,7 +199,7 @@ class SubscriptionRepository {
     async markSubscriptionInactive (subscription_id)  {
         if (subscription_id) { 
             const query = { _id: subscription_id };
-            const result = await Subscription.findOneAndUpdate(query, { $set: { active: false } }, {new: true});
+            const result = await Subscription.findOneAndUpdate(query, { $set: { active: false } }, {new: true, useFindAndModify: false});
             // if (result.nModified === 0) {
             if (result) {
                 let subscription = await this.getSubscription(subscription_id);
@@ -213,7 +215,7 @@ class SubscriptionRepository {
     async unsubscribe (subscription_id)  {
         if (subscription_id) { 
             const query = { _id: subscription_id };
-            const result = await Subscription.findOneAndUpdate(query, { $set: { auto_renewal: false, subscription_status: 'expired' } }, {new: true});
+            const result = await Subscription.findOneAndUpdate(query, { $set: { auto_renewal: false, subscription_status: 'expired' } }, {new: true, useFindAndModify: false});
             if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;

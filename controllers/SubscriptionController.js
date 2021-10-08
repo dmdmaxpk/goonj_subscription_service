@@ -113,7 +113,6 @@ login = async(user_id) => {
 exports.subscribe = async (req, res) => {
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
-	console.log("decoded: ", decodedResponse)
 	let decodedUser = decodedResponse.decoded;
 
 	if(decodedUser && decodedUser.msisdn){
@@ -314,7 +313,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					text = text.replace("%price%",packageObj.display_price_point_numeric);
 					text = text.replace("%user_id%",subscriptionObj.user_id);
 					text = text.replace("%pkg_id%",packageObj._id);
-					console.log("Subscription Message Text",text,user.msisdn);
 					messageRepo.sendMessageDirectly(text, user.msisdn);
 				} else if(sendChargingMessage === true) {
 					let message = constants.subscription_messages_direct[packageObj._id];
@@ -325,7 +323,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
 					}
 				
-					console.log("Subscription Message Text", message, user.msisdn);
 					messageRepo.sendMessageDirectly(message, user.msisdn);
 				}
 			}else {
@@ -682,6 +679,8 @@ exports.recharge = async (req, res) => {
 
 // Check status
 exports.status = async (req, res) => {
+	console.log('request header logs', req.headers);
+
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let user = undefined;
 
@@ -834,7 +833,6 @@ exports.unsubscribe = async (req, res) => {
 					}
 				}
 
-				console.log("unSubCount", unSubCount, "subscriptions.length", subscriptions.length);
 				if(unSubCount === subscriptions.length){
 					// send sms
 					let smsText;
