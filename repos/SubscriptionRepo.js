@@ -146,7 +146,11 @@ class SubscriptionRepository {
         postData.last_modified = localDate;
     
         try {
+            console.log('updateSubscription - query: ', query);
+            console.log('updateSubscription - postData: ', postData);
             const result = await Subscription.findOneAndUpdate(query, postData, {new: true, useFindAndModify: false});
+            console.log('updateSubscription - postData: ', result);
+
             if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
