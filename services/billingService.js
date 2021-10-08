@@ -39,7 +39,7 @@ class BillingService{
                 subscriptionObj.ep_token = subscription.ep_token;
             }
             
-            await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
+            updatedSubscription = await this.subscriptionRepository.updateSubscription(subscription._id, subscriptionObj);
         } else {
             subscription.subscription_status = 'billed';
             subscription.auto_renewal = true;
@@ -59,7 +59,7 @@ class BillingService{
                 subscription.should_affiliation_callback_sent = false;
             }
             
-            let updatedSubscription = await this.subscriptionRepository.createSubscription(subscription);
+            updatedSubscription = await this.subscriptionRepository.createSubscription(subscription);
 
             // Check for the affiliation callback
             if( updatedSubscription.affiliate_unique_transaction_id && 
