@@ -165,7 +165,8 @@ exports.subscribe = async (req, res) => {
 
 doSubscribe = async(req, res, user, gw_transaction_id) => {
 	let headers = req.headers;
-
+	console.log("headers", headers);
+	
 	if(user && user.active === true && user.is_black_listed === false){
 		
 		let newPackageId = req.body.package_id;
