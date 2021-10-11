@@ -166,7 +166,7 @@ exports.subscribe = async (req, res) => {
 doSubscribe = async(req, res, user, gw_transaction_id) => {
 	let headers = req.headers;
 	console.log("headers", headers);
-	
+
 	if(user && user.active === true && user.is_black_listed === false){
 		
 		let newPackageId = req.body.package_id;
@@ -679,8 +679,6 @@ exports.recharge = async (req, res) => {
 
 // Check status
 exports.status = async (req, res) => {
-	console.log('request header logs', req.headers);
-
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let user = undefined;
 
