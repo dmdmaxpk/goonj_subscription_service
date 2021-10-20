@@ -146,7 +146,11 @@ class SubscriptionRepository {
         postData.last_modified = localDate;
     
         try {
-            const result = await Subscription.findOneAndUpdate(query, postData, {new: true});
+            console.log('updateSubscription - query: ', query);
+            console.log('updateSubscription - postData: ', postData);
+            const result = await Subscription.findOneAndUpdate(query, postData, {new: true, useFindAndModify: false});
+            console.log('updateSubscription - postData: ', result);
+
             if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
@@ -195,7 +199,7 @@ class SubscriptionRepository {
     async markSubscriptionInactive (subscription_id)  {
         if (subscription_id) { 
             const query = { _id: subscription_id };
-            const result = await Subscription.findOneAndUpdate(query, { $set: { active: false } }, {new: true});
+            const result = await Subscription.findOneAndUpdate(query, { $set: { active: false } }, {new: true, useFindAndModify: false});
             // if (result.nModified === 0) {
             if (result) {
                 let subscription = await this.getSubscription(subscription_id);
@@ -211,7 +215,7 @@ class SubscriptionRepository {
     async unsubscribe (subscription_id)  {
         if (subscription_id) { 
             const query = { _id: subscription_id };
-            const result = await Subscription.findOneAndUpdate(query, { $set: { auto_renewal: false, subscription_status: 'expired' } }, {new: true});
+            const result = await Subscription.findOneAndUpdate(query, { $set: { auto_renewal: false, subscription_status: 'expired' } }, {new: true, useFindAndModify: false});
             if (result) {
                 let subscription = await this.getSubscription(subscription_id);
                 return subscription;
