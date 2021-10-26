@@ -37,6 +37,7 @@ const servicesUrls = {
 const rabbitMqConnectionString = 'amqp://127.0.0.1';
 const billingHistoryRabbitMqConnectionString = 'amqp://10.0.1.88';
 const db_name = 'goonjpaywall';
+const is_triggers_enabled = false;
 
 const queueNames = {
     subscriptionResponseDispatcher: 'subscriptionResponseDispatcher',
@@ -65,7 +66,8 @@ let config = {
         ideation_callback_url: Ideation_call_back_url,
         ideation_callback_url2: Ideation_call_back_url_2,
         ideation_callback_url3: Ideation_call_back_url_3,
-        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString
+        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString,
+        is_triggers_enabled: is_triggers_enabled
     },
     staging: {
         port: 3004,
@@ -78,7 +80,8 @@ let config = {
         ideation_callback_url: Ideation_call_back_url,
         ideation_callback_url2: Ideation_call_back_url_2,
         ideation_callback_url3: Ideation_call_back_url_3,
-        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString
+        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString,
+        is_triggers_enabled: is_triggers_enabled
     },
     production: {
         port: 3004,
@@ -91,7 +94,8 @@ let config = {
         ideation_callback_url: Ideation_call_back_url,
         ideation_callback_url2: Ideation_call_back_url_2,
         ideation_callback_url3: Ideation_call_back_url_3,
-        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString
+        billingHistoryRabbitMqConnectionString: billingHistoryRabbitMqConnectionString,
+        is_triggers_enabled: is_triggers_enabled
     }
 };
 
