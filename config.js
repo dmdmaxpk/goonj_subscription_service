@@ -21,7 +21,8 @@ const codes = {
     code_auth_failed: 14,
     code_auth_token_not_supplied: 15,
     code_already_in_queue: 16,
-    code_otp_not_found: 17
+    code_otp_not_found: 17,
+    code_subscribed_but_unstreamable: 18
 }
 
 const servicesUrls = {

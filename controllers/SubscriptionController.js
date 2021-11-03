@@ -346,12 +346,19 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 
 							if(subscription.subscription_status === 'billed' || subscription.subscription_status === 'trial'
 										|| subscription.subscription_status === 'graced'){
-								if(autoRenewal === true){
+								if(autoRenewal === true && is_allowed_to_stream === true){
 									// Already subscribed, no need to subscribed package again
 									history.billing_status = "subscription-request-received-for-the-same-package";
 									await billingHistoryRepo.createBillingHistory(history);
 									res.send({code: config.codes.code_already_subscribed, message: 'Already subscribed', gw_transaction_id: gw_transaction_id});
-								}else{
+								}
+								else if(autoRenewal === true && is_allowed_to_stream === false){
+									// Already subscribed, no need to subscribed package again
+									history.billing_status = "subscription-request-received-for-the-same-package";
+									await billingHistoryRepo.createBillingHistory(history);
+									res.send({code: config.codes.code_subscribed_but_unstreamable, message: 'Already Subscribed but not allowed to stream', gw_transaction_id: gw_transaction_id});
+								}
+								else{
 									// Same package - just switch on auto renewal so that the user can get charge automatically.
 									let updated = await subscriptionRepo.updateSubscription(subscription._id, {auto_renewal: true});
 									if(updated){
