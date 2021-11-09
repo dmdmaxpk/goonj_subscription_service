@@ -331,6 +331,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source);
 					let currentPackageId = subscription.subscribed_package_id;
 					let autoRenewal = subscription.auto_renewal;
+					let is_allowed_to_stream = subscription.is_allowed_to_stream;
 
 					if(subscription.queued === false){
 						let history = {};
@@ -702,7 +703,7 @@ exports.status = async (req, res) => {
 	} else {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
-
+	console.log("user", user);
 	if(user){
 			let result;
 			if(package_id){
