@@ -411,6 +411,13 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										subscription.payment_source = req.body.payment_source;
 										let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 										if(result.message === "success"){
+											
+											let message = constants.subscription_messages_direct[packageObj._id];
+											message = message.replace("%price%",packageObj.display_price_point)
+											message = message.replace("%user_id%",subscriptionObj.user_id)
+											message = message.replace("%pkg_id%",packageObj._id)
+											messageRepo.sendMessageDirectly(text, user.msisdn);
+
 											res.send({code: config.codes.code_success, message: 'Subscribed Successfully chance', gw_transaction_id: gw_transaction_id});
 										}else{
 											res.send({code: config.codes.code_error, message: `Failed to subscribe, possible cause: ${result.desc ? result.desc : 'insufficient balance'}`, gw_transaction_id: gw_transaction_id});
