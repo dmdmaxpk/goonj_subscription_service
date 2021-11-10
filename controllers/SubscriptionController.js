@@ -416,7 +416,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 											message = message.replace("%price%",packageObj.display_price_point)
 											message = message.replace("%user_id%",user._id)
 											message = message.replace("%pkg_id%",packageObj._id)
-											messageRepo.sendMessageDirectly(text, user.msisdn);
+											messageRepo.sendMessageDirectly(message, user.msisdn);
 
 											res.send({code: config.codes.code_success, message: 'Subscribed Successfully chance', gw_transaction_id: gw_transaction_id});
 										}else{
