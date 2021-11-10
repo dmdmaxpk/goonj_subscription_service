@@ -411,10 +411,10 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 										subscription.payment_source = req.body.payment_source;
 										let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
 										if(result.message === "success"){
-											
+
 											let message = constants.subscription_messages_direct[packageObj._id];
 											message = message.replace("%price%",packageObj.display_price_point)
-											message = message.replace("%user_id%",subscriptionObj.user_id)
+											message = message.replace("%user_id%",user._id)
 											message = message.replace("%pkg_id%",packageObj._id)
 											messageRepo.sendMessageDirectly(text, user.msisdn);
 
