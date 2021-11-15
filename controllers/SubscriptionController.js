@@ -404,6 +404,13 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									}else{
 										await reSubscribe(subscription, history);
 										let date = nextBillingTime.getDate()+"-"+(nextBillingTime.getMonth()+1)+"-"+nextBillingTime.getFullYear();
+										
+										let message = constants.resubscription_message.message;
+										message = message.replace("%date%", date);
+										message = message.replace("%user_id%",user._id)
+										message = message.replace("%pkg_id%",packageObj._id)
+										messageRepo.sendMessageDirectly(message, user.msisdn);
+										
 										res.send({code: config.codes.code_already_subscribed, message: 'You have already paid till '+date+'. Continue watching ', gw_transaction_id: gw_transaction_id});
 									}
 								}else{

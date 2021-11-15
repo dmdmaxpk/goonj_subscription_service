@@ -14,6 +14,9 @@ class Constants {
             QDfH: `Goonj Comedy Rs%price% mein subscribe kar di gaye hai. Service dekhne k liye goonj.pk or unsub k liye call 03401832782`,
             QDfI: `Goonj Comedy Rs%price% mein subscribe kar di gaye hai. Service dekhne k liye goonj.pk or unsub k liye call 03401832782`,
         },
+        this.resubscription_message = {
+            message: `Goonj TV %date% tk resume kr diya gaya hai. Service dekhny ky liye click krain https://goonj.pk or khatam krny liye https://goonj.pk/unsubscribe?proxy=%user_id%&amp;pg=%pkg_id%`,
+        },
         this.message_after_repeated_succes_charge = {
             QDfC: `Goonj tv Rs.5 ap ka mobile balance sa renew kr de gae ha. Daikhny ka lye click goonj.pk or Khatam krny ka lye goonj.pk/unsubscribe?proxy=%user_id%&amp;pg=%pkg_id%`,
             QDfG: `Goonj tv Rs.15 ap ka mobile balance sa renew kr de gae ha. Daikhny ka lye click goonj.pk or Khatam krny ka lye goonj.pk/unsubscribe?proxy=%user_id%&amp;pg=%pkg_id%`,
