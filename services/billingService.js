@@ -160,6 +160,8 @@ class BillingService{
             url = config.ideation_callback_url2 + `?txid=${tid}`;
         } else if (mid === "aff3" || mid === "aff3a"){
             url = config.ideation_callback_url3 + `${tid}`;
+        } else if (mid === "affpro"){
+            url = config.ideation_Affpro_callback + `${tid}`;
         } else if (mid === "1" || mid === "gdn" ){
             return new Promise((resolve,reject) => { reject(null)})
         }
