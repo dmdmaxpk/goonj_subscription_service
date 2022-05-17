@@ -839,18 +839,19 @@ exports.unsubscribe = async (req, res) => {
 					history.source = source ? source : subscription.source;
 					history.operator = user.operator;
 					result = await billingHistoryRepo.createBillingHistory(history);
-	
-					if(subscription.marketing_source && subscription.marketing_source !== 'none'){
+					
+					unSubCount += 1;
+					// if(subscription.marketing_source && subscription.marketing_source !== 'none'){
 						
-						// This user registered from a marketer, let's put this user in gray list
-						result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
-						result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
-						if(result){
-							unSubCount += 1;
-						}
-					}else{
-						unSubCount += 1;
-					}
+					// 	// This user registered from a marketer, let's put this user in gray list
+					// 	result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
+					// 	result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
+					// 	if(result){
+					// 		unSubCount += 1;
+					// 	}
+					// }else{
+					// 	unSubCount += 1;
+					// }
 				}
 
 				if(unSubCount === subscriptions.length){
