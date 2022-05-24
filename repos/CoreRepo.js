@@ -2,8 +2,8 @@ const Axios = require('axios');
 const config = require('../config');
 
 class CoreRepository{
-    async createViewLog(user_id, subscription_id, source, operator){
-        return await Axios.post(`${config.servicesUrls.core_service}/viewlogs/create_view_log`, {user_id, subscription_id, source, operator})
+    async createViewLog(user_id, subscription_id, source, operator, marketing_source){
+        return await Axios.post(`${config.servicesUrls.core_service}/viewlogs/create_view_log`, {user_id: user_id, subscription_id: subscription_id, source: source, operator: operator, marketing_source: marketing_source})
         .then(res =>{ 
             let result = res.data;
             return result

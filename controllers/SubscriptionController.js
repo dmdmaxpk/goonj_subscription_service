@@ -329,7 +329,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 			}else {
 				if(subscription.active === true){
 					// Pass subscription through following checks before pushing into queue
-					await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source);
+					await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, req.body.marketing_source);
 					let currentPackageId = subscription.subscribed_package_id;
 					let autoRenewal = subscription.auto_renewal;
 					let is_allowed_to_stream = subscription.is_allowed_to_stream;
@@ -557,7 +557,7 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	billingHistory.source = source;
 	billingHistory.operator = subscriptionObj.payment_source;
 	await billingHistoryRepo.createBillingHistory(billingHistory);
-	await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source);
+	await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
 
 	return "done";
 }
@@ -718,7 +718,7 @@ exports.status = async (req, res) => {
 	} else {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
-	console.log("user", user);
+	//console.log("user", user);
 	if(user){
 			let result;
 			if(package_id){
@@ -726,7 +726,7 @@ exports.status = async (req, res) => {
 			}
 			
 			if(result){
-				await coreRepo.createViewLog(user._id, result._id, result.source, result.payment_source);
+				await coreRepo.createViewLog(user._id, result._id, result.source, result.payment_source, req.body.marketing_source);
 				res.send({code: config.codes.code_success, 
 					subscribed_package_id: result.subscribed_package_id, 
 					data: {
