@@ -114,6 +114,7 @@ exports.subscribe = async (req, res) => {
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
 	let decodedUser = decodedResponse.decoded;
+	console.log('-----SUBSCRIBE-----', req.body);
 
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
@@ -195,6 +196,8 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 
 				if(req.body.marketing_source){
 					subscriptionObj.marketing_source = req.body.marketing_source;
+				}else{
+					subscriptionObj.marketing_source = 'na';
 				}
 	
 				if(req.body.affiliate_unique_transaction_id || req.body.affiliate_mid){
@@ -328,7 +331,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 			}else {
 				if(subscription.active === true){
 					// Pass subscription through following checks before pushing into queue
-					await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source);
+					await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
 					let currentPackageId = subscription.subscribed_package_id;
 					let autoRenewal = subscription.auto_renewal;
 					let is_allowed_to_stream = subscription.is_allowed_to_stream;
@@ -556,7 +559,7 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	billingHistory.source = source;
 	billingHistory.operator = subscriptionObj.payment_source;
 	await billingHistoryRepo.createBillingHistory(billingHistory);
-	await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source);
+	await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
 
 	return "done";
 }
@@ -707,6 +710,7 @@ exports.status = async (req, res) => {
 	let msisdn = req.body.msisdn;
 	let package_id = req.body.package_id;
 	let user_id = req.body.user_id;
+	let marketing_source = req.body.marketing_source ? req.body.marketing_source : 'na';
 
 	if(!package_id){
 		package_id = config.default_package_id;
@@ -717,7 +721,7 @@ exports.status = async (req, res) => {
 	} else {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
-	console.log("user", user);
+	//console.log("user", user);
 	if(user){
 			let result;
 			if(package_id){
@@ -725,7 +729,7 @@ exports.status = async (req, res) => {
 			}
 			
 			if(result){
-				await coreRepo.createViewLog(user._id, result._id, result.source, result.payment_source);
+				await coreRepo.createViewLog(user._id, result._id, result.source, result.payment_source, marketing_source);
 				res.send({code: config.codes.code_success, 
 					subscribed_package_id: result.subscribed_package_id, 
 					data: {
@@ -839,18 +843,19 @@ exports.unsubscribe = async (req, res) => {
 					history.source = source ? source : subscription.source;
 					history.operator = user.operator;
 					result = await billingHistoryRepo.createBillingHistory(history);
-	
-					if(subscription.marketing_source && subscription.marketing_source !== 'none'){
+					
+					unSubCount += 1;
+					// if(subscription.marketing_source && subscription.marketing_source !== 'none'){
 						
-						// This user registered from a marketer, let's put this user in gray list
-						result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
-						result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
-						if(result){
-							unSubCount += 1;
-						}
-					}else{
-						unSubCount += 1;
-					}
+					// 	// This user registered from a marketer, let's put this user in gray list
+					// 	result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
+					// 	result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
+					// 	if(result){
+					// 		unSubCount += 1;
+					// 	}
+					// }else{
+					// 	unSubCount += 1;
+					// }
 				}
 
 				if(unSubCount === subscriptions.length){

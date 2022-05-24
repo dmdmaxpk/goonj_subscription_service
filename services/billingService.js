@@ -160,18 +160,26 @@ class BillingService{
             url = config.ideation_callback_url2 + `?txid=${tid}`;
         } else if (mid === "aff3" || mid === "aff3a"){
             url = config.ideation_callback_url3 + `${tid}`;
+        } else if (mid === "affpro"){
+            url = config.ideation_Affpro_callback + `${tid}`;
         } else if (mid === "1" || mid === "gdn" ){
             return new Promise((resolve,reject) => { reject(null)})
+        }else if(mid === 'affpro') {
+            url = "http://ad.propellerads.com/conversion.php?aid=3541543&pid=&tid=108058&visitor_id="+tid
+
         }
-        console.log("warning", "affiliate url",url)
+
+        console.log("warning", "affiliate url", url)
         return new Promise(function(resolve, reject) {
             axios({
                 method: 'post',
                 url: url,
                 headers: {'Content-Type': 'application/x-www-form-urlencoded' }
             }).then(function(response){
+                console.log("affpro", response.data);
                 resolve(response.data);
             }).catch(function(err){
+                console.log("affpro - err", err.message);
                 reject(err);
             });
         });
