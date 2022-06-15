@@ -397,7 +397,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 													if(result.desc === 'Easypaisa OTP not found'){
 														res.send({code: config.codes.code_otp_not_found, message: result.desc, gw_transaction_id: gw_transaction_id});
 													}else{
-														res.send({code: config.codes.code_error, message: 'Failed to subscribe, possible cause: '+ result.desc, gw_transaction_id: gw_transaction_id});
+														res.send({code: config.codes.code_error, message: 'Failed to subscribe', gw_transaction_id: gw_transaction_id});
 													}
 												}
 											}
