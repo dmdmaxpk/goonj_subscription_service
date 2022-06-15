@@ -114,7 +114,7 @@ exports.subscribe = async (req, res) => {
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
 	let decodedUser = decodedResponse.decoded;
-	console.log('-----SUBSCRIBE-----', req.body);
+	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
