@@ -40,14 +40,21 @@ class TpEpCoreRepository{
             if(response.message === "success"){
                 await this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
             }else if(response.message === 'failed'){
+                if(!response.desc){
+                    response.desc = 'Failed to subscribe';
+                }
+
                 await this.billingService.billingFailed(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
             }
+
+            console.log('returning reponse....');
             return response
-        })
-        .catch(err =>{
+        }).catch(err =>{
             return err
         })
     }
+
+
 
     async subscriberQuery(msisdn){
         return await Axios.get(`${config.servicesUrls.tp_ep_core_service}/core/subscriber-query?msisdn=${msisdn}`)
