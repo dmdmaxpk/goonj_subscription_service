@@ -208,6 +208,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 
 				// Check if trial is allowed by the system
 				let sendTrialMessage = false;
+				let trialDays = 1; // default 1 day
 				let sendChargingMessage = false;
 
 				
@@ -262,19 +263,31 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 								res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
 							}
 						}else{
-							// Live paywall, subscription rules along with micro changing started
-							let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
-							if(subsResponse && subsResponse.status === "charged"){
-								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
-								sendChargingMessage = true;
-							}else if(subsResponse && subsResponse.status === "trial"){
-								res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
+
+							// award free trial for 7 days for app users
+							if(subscriptionObj.source === 'app') {
+								let trial = await activateTrial(null, subscriptionObj.source, user, packageObj, subscriptionObj);
+								if(trial === "done"){
+									trialDays = 7;
+									console.log("Trial activated successfully for "+trialDays+" days for app user - msisdn: "+ user.msisdn);
+								}
 								sendTrialMessage = true;
+								res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
 							}else{
-								res.send({code: config.codes.code_error, message: 'Failed to subscribe package' + (subsResponse.desc ? ', possible cause: '+subsResponse.desc : ''), package_id: subsResponse.subscriptionObj ? subsResponse.subscriptionObj.subscribed_package_id : '', gw_transaction_id: gw_transaction_id});
+								// Live paywall, subscription rules along with micro changing started
+								let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
+								if(subsResponse && subsResponse.status === "charged"){
+									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
+									sendChargingMessage = true;
+								}else if(subsResponse && subsResponse.status === "trial"){
+									res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
+									sendTrialMessage = true;
+								}else{
+									res.send({code: config.codes.code_error, message: 'Failed to subscribe package' + (subsResponse.desc ? ', possible cause: '+subsResponse.desc : ''), package_id: subsResponse.subscriptionObj ? subsResponse.subscriptionObj.subscribed_package_id : '', gw_transaction_id: gw_transaction_id});
+								}
+								subscriptionObj = subsResponse.subscriptionObj;
+								packageObj = subsResponse.subscriptionObj ? await coreRepo.getPackage(subscriptionObj.subscribed_package_id) : '';
 							}
-							subscriptionObj = subsResponse.subscriptionObj;
-							packageObj = subsResponse.subscriptionObj ? await coreRepo.getPackage(subscriptionObj.subscribed_package_id) : '';
 						}
 					}catch(err){
 						console.log("=> ", err);
@@ -312,6 +325,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
 					}
 					text = message;
+					text = text.replace("24hrs", trialDays + " day(s)");
 					text = text.replace("%trial_hours%",trial_hours);
 					text = text.replace("%price%",packageObj.display_price_point_numeric);
 					text = text.replace("%user_id%",subscriptionObj.user_id);
