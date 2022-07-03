@@ -266,7 +266,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 
 							// award free trial for 7 days for app users
 							if(subscriptionObj.source === 'app') {
-								let trial = await activateTrial(null, subscriptionObj.source, user, packageObj, subscriptionObj);
+								let trial = await activateTrial(undefined, subscriptionObj.source, user, packageObj, subscriptionObj);
 								if(trial === "done"){
 									trialDays = 7;
 									console.log("Trial activated successfully for "+trialDays+" days for app user - msisdn: "+ user.msisdn);
@@ -534,6 +534,10 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 		trial_hours = 30;
 	}
 
+	if(source === 'app'){
+		trial_hours = 168;
+	}
+
 	let billingHistory = {};
 	if(subscriptionObj.payment_source === "easypaisa"){
 		packageObj.price_point_pkr = 1;
@@ -546,8 +550,6 @@ activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
 	}
 
 	// Success billing
-
-
 	let serverDate = new Date();
 	let localDate = helper.setDateWithTimezone(serverDate);
 	let nextBilling = _.clone(localDate);
