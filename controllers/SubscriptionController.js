@@ -272,7 +272,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 									console.log("Trial activated successfully for "+trialDays+" days for app user - msisdn: "+ user.msisdn);
 								}
 								sendTrialMessage = true;
-								res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
+								res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
 							}else{
 								// Live paywall, subscription rules along with micro changing started
 								let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
