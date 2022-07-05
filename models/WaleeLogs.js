@@ -5,7 +5,7 @@ const {Schema} = mongoose;
 const waleelogs = new Schema({
     _id: { type: ShortId, len: 12, retries: 4},
     utm_source: { type: String },
-    foreign_id: { type: String, index: true },
+    foreign_id: { type: Number, index: true },
     user_id: { type: String },
     added_dtm: { type: Date, default: Date.now, index: true }
 }, { strict: true });

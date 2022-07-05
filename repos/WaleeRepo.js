@@ -5,9 +5,9 @@ const Waleelogs = mongoose.model('Waleelogs');
 
 class WaleeRepository {
     async getWaleeLatestForeignId(user_id){
-        const lastRecord = await Waleelogs.find().count();
+        const lastRecord = await Waleelogs.find();
         const waleeObj = {
-            foreign_id: lastRecord && lastRecord !== 0 ? lastRecord : 1001,
+            foreign_id: lastRecord && lastRecord.foreign_id ? Number(lastRecord.foreign_id) + 1 : 1001,
         };
         if (user_id) waleeObj.user_id = user_id;
         try{
