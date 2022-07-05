@@ -5,7 +5,7 @@ const Waleelogs = mongoose.model('Waleelogs');
 
 class WaleeRepository {
     async getWaleeLatestForeignId(user_id){
-        const lastRecord = await Waleelogs.find().sort({added_dtm: -1});
+        const lastRecord = await Waleelogs.find().sort({added_dtm: -1}).limit(1);
         console.log('warning', lastRecord);
         const waleeObj = {
             foreign_id: lastRecord && lastRecord.length > 0 ? Number(lastRecord[0].foreign_id) + 1 : 1001,
