@@ -9,6 +9,7 @@ const CoreRepo = require('../repos/CoreRepo');
 const MessageRepo = require('../repos/MessageRepo');
 const UserRepo = require('../repos/UserRepo');
 const TpEpCoreRepo = require('../repos/TpEpCoreRepo');
+const WaleeRepo = require('../repos/WaleeRepo');
 
 // Services
 const BillingService = require('../services/billingService');
@@ -26,6 +27,7 @@ container.register({
     messageRepository: awilix.asClass(MessageRepo).singleton(),
     userRepository: awilix.asClass(UserRepo).singleton(),
     tpEpCoreRepository: awilix.asClass(TpEpCoreRepo).singleton(),
+    waleeRepository: awilix.asClass(WaleeRepo).singleton(),
 
     //Services
     billingService : awilix.asClass(BillingService).singleton(),

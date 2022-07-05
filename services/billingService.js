@@ -4,9 +4,10 @@ const config = require('../config');
 const { default: axios } = require('axios');
 
 class BillingService{
-    constructor({subscriptionRepository, billingHistoryRepository}){
+    constructor({subscriptionRepository, billingHistoryRepository, waleeRepository}){
         this.subscriptionRepository = subscriptionRepository;
         this.billingHistoryRepository = billingHistoryRepository;
+        this.waleeRepository = waleeRepository;
     }
 
     // billing functions
@@ -66,7 +67,7 @@ class BillingService{
                 updatedSubscription.affiliate_mid && 
                 updatedSubscription.is_affiliation_callback_executed === false &&
                 updatedSubscription.should_affiliation_callback_sent === true){
-                if((updatedSubscription.source === "HE" || updatedSubscription.source === "affiliate_web") && updatedSubscription.affiliate_mid != "1") {
+                if(updatedSubscription.affiliate_mid == 'walee' || ((updatedSubscription.source === "HE" || updatedSubscription.source === "affiliate_web") && updatedSubscription.affiliate_mid != "1")) {
                     // Send affiliation callback
                     this.sendAffiliationCallback(
                         updatedSubscription.affiliate_unique_transaction_id, 
@@ -74,7 +75,9 @@ class BillingService{
                         user,
                         updatedSubscription._id,
                         packageObj._id,
-                        packageObj.paywall_id
+                        packageObj.paywall_id,
+                        packageObj.price_point_pkr,
+                        updatedSubscription.source
                         );
                 }
             }
@@ -122,7 +125,7 @@ class BillingService{
         await this.billingHistoryRepository.createBillingHistory(history);
     }
 
-    async sendAffiliationCallback(tid, mid, user, subscription_id, package_id, paywall_id) {
+    async sendAffiliationCallback(tid, mid, user, subscription_id, package_id, paywall_id, price, source) {
         let combinedId = tid + "*" +mid;
 
         let history = {};
@@ -135,7 +138,7 @@ class BillingService{
         history.operator = 'telenor';
 
         console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
-        this.sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
+        this.sendCallBackToIdeation(mid, tid, subscription_id, msisdn, price, source).then(async (fulfilled) => {
             let updated = await this.subscriptionRepository.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
             if(updated){
                 console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
@@ -152,34 +155,48 @@ class BillingService{
         });
     }
 
-    async sendCallBackToIdeation(mid, tid)  {
-        var url; 
-        if (mid === "1569") {
-            url = config.ideation_callback_url + `p?mid=${mid}&tid=${tid}`;
-        } else if (mid === "goonj"){
-            url = config.ideation_callback_url2 + `?txid=${tid}`;
-        } else if (mid === "aff3" || mid === "aff3a"){
-            url = config.ideation_callback_url3 + `${tid}`;
-        } else if (mid === "affpro"){
-            url = config.ideation_Affpro_callback + `${tid}`;
-        } else if (mid === "1" || mid === "gdn" ){
-            return new Promise((resolve,reject) => { reject(null)})
+    async sendCallBackToIdeation(mid, tid, subscription_id, msisdn, price, source)  {
+        if(mid === 'walee'){
+            const check = await this.waleeRepository.checkSourceInterval(source);
+            if(check === true){
+                await this.waleeRepository.successfulSubscription({
+                    subscription_id,
+                    utm_source: source,
+                    userPhone: msisdn,
+                    totalPrice: price
+                });
+            }
+            return true;
         }
-
-        console.log("warning - ", "affiliate url - ", "mid - ", mid, " url - ", url)
-        return new Promise(function(resolve, reject) {
-            axios({
-                method: 'post',
-                url: url,
-                headers: {'Content-Type': 'application/x-www-form-urlencoded' }
-            }).then(function(response){
-                console.log("affpro", response.data);
-                resolve(response.data);
-            }).catch(function(err){
-                console.log("affpro - err", err.message);
-                reject(err);
+        else {
+            var url; 
+            if (mid === "1569") {
+                url = config.ideation_callback_url + `p?mid=${mid}&tid=${tid}`;
+            } else if (mid === "goonj"){
+                url = config.ideation_callback_url2 + `?txid=${tid}`;
+            } else if (mid === "aff3" || mid === "aff3a"){
+                url = config.ideation_callback_url3 + `${tid}`;
+            } else if (mid === "affpro"){
+                url = config.ideation_Affpro_callback + `${tid}`;
+            } else if (mid === "1" || mid === "gdn" ){
+                return new Promise((resolve,reject) => { reject(null)})
+            }
+    
+            console.log("warning - ", "affiliate url - ", "mid - ", mid, " url - ", url)
+            return new Promise(function(resolve, reject) {
+                axios({
+                    method: 'post',
+                    url: url,
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded' }
+                }).then(function(response){
+                    console.log("affpro", response.data);
+                    resolve(response.data);
+                }).catch(function(err){
+                    console.log("affpro - err", err.message);
+                    reject(err);
+                });
             });
-        });
+        }
     }
 }
 module.exports = BillingService;
