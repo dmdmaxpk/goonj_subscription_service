@@ -8,7 +8,7 @@ class WaleeRepository {
         const lastRecord = await Waleelogs.find().sort({added_dtm: -1});
         console.log('warning', lastRecord);
         const waleeObj = {
-            foreign_id: lastRecord && lastRecord.foreign_id ? Number(lastRecord.foreign_id) + 1 : 1001,
+            foreign_id: lastRecord && lastRecord.length > 0 ? Number(lastRecord[0].foreign_id) + 1 : 1001,
         };
         if (user_id) waleeObj.user_id = user_id;
         try{

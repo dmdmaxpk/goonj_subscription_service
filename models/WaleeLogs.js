@@ -9,7 +9,7 @@ const waleelogs = new Schema({
     user_id: { type: String },
     added_dtm: { type: Date, default: Date.now, index: true }
 }, { strict: true });
-waleelogs.index({user_id:1,foreign_id:1},{unique: true});
+waleelogs.index({foreign_id:1},{unique: true});
 
 
 module.exports = mongoose.model('Waleelogs', waleelogs);
