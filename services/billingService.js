@@ -157,15 +157,12 @@ class BillingService{
 
     async sendCallBackToIdeation(mid, tid, subscription_id, msisdn, price, source)  {
         if(mid === 'walee'){
-            const check = await this.waleeRepository.checkSourceInterval(source);
-            if(check === true){
-                await this.waleeRepository.successfulSubscription({
-                    subscription_id,
-                    utm_source: source,
-                    userPhone: msisdn,
-                    totalPrice: price
-                });
-            }
+            await this.waleeRepository.successfulSubscription({
+                subscription_id,
+                utm_source: source,
+                userPhone: msisdn,
+                totalPrice: price
+            });
             return true;
         }
         else {
