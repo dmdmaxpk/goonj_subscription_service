@@ -82,9 +82,9 @@ class WaleeRepository {
     }
 
     async successfulSubscription(body){
-        const check = await this.checkSourceInterval(source);
+        const {utm_source, subscription_id, userPhone, totalPrice} = body;
+        const check = await this.checkSourceInterval(utm_source);
         if(check === true){
-            const {utm_source, subscription_id, userPhone, totalPrice} = body;
             const subscriptionBody = {
                 orderId: subscription_id,
                 referrer: utm_source,
