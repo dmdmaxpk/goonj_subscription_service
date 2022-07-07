@@ -39,7 +39,8 @@ class WaleeRepository {
     async linkClick(query){
         const {utm_source} = query;
         const clickBody = {
-            referrer: utm_source,
+            // referrer: utm_source,
+            referrer: 8522,
             hookType: 'Link Click',
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
@@ -62,7 +63,8 @@ class WaleeRepository {
         const {utm_source} = query;
         const pageviewBody = {
             page: '/checkout',
-            referrer: utm_source,
+            // referrer: utm_source,
+            referrer: 8522,
             hookType: 'Page Views',
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
@@ -87,7 +89,8 @@ class WaleeRepository {
         if(check === true){
             const subscriptionBody = {
                 orderId: subscription_id,
-                referrer: utm_source,
+                // referrer: utm_source,
+                referrer: 8522,
                 hookType: 'Sales',
                 userPhone: userPhone,
                 userMail: 'na',
