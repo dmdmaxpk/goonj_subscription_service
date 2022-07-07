@@ -45,7 +45,7 @@ class WaleeRepository {
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
             type: 'Wordpress',
-            domain: 'www.goonj.pk'
+            domain: 'https://goonj.pk'
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, clickBody)
         .then(res => {
@@ -69,7 +69,7 @@ class WaleeRepository {
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
             type: 'Wordpress',
-            domain: 'www.goonj.pk'
+            domain: 'https://goonj.pk'
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, pageviewBody)
         .then(res => {
@@ -101,7 +101,7 @@ class WaleeRepository {
                 foriegn_id: await this.getWaleeLatestForeignId(),
                 installed_version: '1.0.0',
                 type: 'Wordpress',
-                domain: 'www.goonj.pk',
+                domain: 'https://goonj.pk',
                 userDetails: {}
             }
             return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, subscriptionBody)
