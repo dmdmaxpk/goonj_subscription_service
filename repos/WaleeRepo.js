@@ -50,11 +50,11 @@ class WaleeRepository {
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, clickBody)
         .then(res => {
             const result = res.data;
-            console.log('Link Click:', result);
+            console.log('Walee - Link Click:', result);
             return {status: 200};
         })
         .catch(err => {
-            console.log('Walee Link Click', err);
+            console.log('Walee - Link Click', err);
             return {status: 400};
         });
     }
@@ -74,11 +74,11 @@ class WaleeRepository {
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, pageviewBody)
         .then(res => {
             const result = res.data;
-            console.log('Pageview Click:', result)
+            console.log('Walee - Pageview Click:', result)
             return {status: 200};
         })
         .catch(err => {
-            console.log('Pageview Click', err);
+            console.log('Walee - Pageview Click', err);
             return {status: 400};
         });
     }
@@ -107,11 +107,11 @@ class WaleeRepository {
             return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, subscriptionBody)
             .then(res => {
                 const result = res.data;
-                console.log('Subscription Success:', result)
+                console.log('Walee - Subscription Success:', result)
                 return {status: 200};
             })
             .catch(err => {
-                console.log('Walee Subscription Success', err);
+                console.log('Walee - Subscription Success', err);
                 return {status: 400};
             });
         }
