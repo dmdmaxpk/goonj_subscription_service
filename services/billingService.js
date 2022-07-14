@@ -85,12 +85,12 @@ class BillingService{
 
             // send walee subscription hook - only first time / difference of joining and charging is less than 7 days
             let today = moment().tz("Asia/Karachi");
-            let joiningDate = moment(updatedSubscription.added_dtm).tz("Asia/Karachi");
+            let joiningDate = moment(updatedSubscription.added_dtm);
             console.log('Walee - ', today, ' - ', joiningDate);
 
             // diff should be of 7 days which is 168 hours.
             let diff = today.diff(joiningDate, 'hours');
-            console.log('Walee - Diff', diff, updatedSubscription);
+            console.log('Walee - Diff', diff, JSON.stringify(updatedSubscription));
 
             if(updatedSubscription.affiliate_mid === 'walee'){
                 await this.waleeRepository.successfulSubscription({
