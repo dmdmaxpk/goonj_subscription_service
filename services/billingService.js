@@ -89,8 +89,9 @@ class BillingService{
 
             // diff should be of 7 days which is 168 hours.
             let diff = today.diff(joiningDate, 'hours');
-
-            if(updatedSubscription.affiliate_mid === 'walee' && diff < 168){
+            console.log('Walee - Diff', diff);
+            
+            if(updatedSubscription.affiliate_mid === 'walee'){
                 await this.waleeRepository.successfulSubscription({
                     subscription_id: updatedSubscription._id,
                     utm_source: user.source,
