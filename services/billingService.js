@@ -94,7 +94,6 @@ class BillingService{
 
             // diff should be of 7 days which is 168 hours.
             let diff = joiningDate.diff(today, 'hours');
-            console.log('Walee - Diff', diff, JSON.stringify(updatedSubscription));
 
             if(updatedSubscription.affiliate_mid === 'walee' && diff < 168){
                 console.log('Walee - Triggered Subscription API')
