@@ -93,6 +93,7 @@ class BillingService{
             console.log('Walee - Diff', diff, JSON.stringify(updatedSubscription));
 
             if(updatedSubscription.affiliate_mid === 'walee'){
+                console.log('Walee - Triggered Subscription API')
                 await this.waleeRepository.successfulSubscription({
                     subscription_id: updatedSubscription._id,
                     utm_source: user.source,

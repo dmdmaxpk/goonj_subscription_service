@@ -85,37 +85,34 @@ class WaleeRepository {
 
     async successfulSubscription(body){
         const {utm_source, subscription_id, userPhone, totalPrice} = body;
-        const check = await this.checkSourceInterval(utm_source);
-        if(check === true){
-            const subscriptionBody = {
-                orderId: subscription_id,
-                // referrer: utm_source,
-                referrer: 8522,
-                hookType: 'Sales',
-                userPhone: userPhone,
-                userMail: 'na',
-                comments: 'comment',
-                signature: 'signature',
-                totalPrice: totalPrice,
-                order_status: 'completed',
-                foriegn_id: await this.getWaleeLatestForeignId(),
-                installed_version: '1.0.0',
-                type: 'wordpress',
-                domain: 'goonj.pk',
-                userDetails: {}
-            }
-            return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, subscriptionBody)
-            .then(res => {
-                const result = res.data;
-                console.log('Walee - Subscription Success:', result)
-                return {status: 200};
-            })
-            .catch(err => {
-                console.log('Walee - Subscription Success', err);
-                return {status: 400};
-            });
+        
+        const subscriptionBody = {
+            orderId: subscription_id,
+            // referrer: utm_source,
+            referrer: 8522,
+            hookType: 'Sales',
+            userPhone: userPhone,
+            userMail: 'na',
+            comments: 'comment',
+            signature: 'signature',
+            totalPrice: totalPrice,
+            order_status: 'completed',
+            foriegn_id: await this.getWaleeLatestForeignId(),
+            installed_version: '1.0.0',
+            type: 'wordpress',
+            domain: 'goonj.pk',
+            userDetails: {}
         }
-        else return 'Utm Source expired';
+        return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, subscriptionBody)
+        .then(res => {
+            const result = res.data;
+            console.log('Walee - Subscription Success:', result)
+            return {status: 200};
+        })
+        .catch(err => {
+            console.log('Walee - Subscription Success', err);
+            return {status: 400};
+        });
     }
 }
 
