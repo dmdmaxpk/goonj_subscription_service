@@ -2,11 +2,13 @@ const Helper = require('../helper/helper');
 const  _ = require('lodash');
 const config = require('../config');
 const { default: axios } = require('axios');
+const moment = require('moment');
 
 class BillingService{
-    constructor({subscriptionRepository, billingHistoryRepository}){
+    constructor({subscriptionRepository, billingHistoryRepository, waleeRepository}){
         this.subscriptionRepository = subscriptionRepository;
         this.billingHistoryRepository = billingHistoryRepository;
+        this.waleeRepository = waleeRepository;
     }
 
     // billing functions
@@ -66,7 +68,7 @@ class BillingService{
                 updatedSubscription.affiliate_mid && 
                 updatedSubscription.is_affiliation_callback_executed === false &&
                 updatedSubscription.should_affiliation_callback_sent === true){
-                if((updatedSubscription.source === "HE" || updatedSubscription.source === "affiliate_web") && updatedSubscription.affiliate_mid != "1") {
+                if(updatedSubscription.affiliate_mid == 'walee' || ((updatedSubscription.source === "HE" || updatedSubscription.source === "affiliate_web") && updatedSubscription.affiliate_mid != "1")) {
                     // Send affiliation callback
                     this.sendAffiliationCallback(
                         updatedSubscription.affiliate_unique_transaction_id, 
@@ -74,11 +76,34 @@ class BillingService{
                         user,
                         updatedSubscription._id,
                         packageObj._id,
-                        packageObj.paywall_id
+                        packageObj.paywall_id,
+                        packageObj.price_point_pkr,
+                        updatedSubscription.source
                         );
                 }
             }
 
+            // send walee subscription hook - only first time / difference of joining and charging is less than 7 days
+            // diff should be of 7 days which is 168 hours
+            
+            let today = moment().utc();
+            today.add(5, 'h');
+
+            let joiningDate = moment(updatedSubscription.added_dtm);
+            console.log('Walee - ', today, ' - ', joiningDate);
+
+            // diff should be of 7 days which is 168 hours.
+            let diff = joiningDate.diff(today, 'hours');
+
+            if(updatedSubscription.affiliate_mid === 'walee' && diff < 168){
+                console.log('Walee - Triggered Subscription API')
+                await this.waleeRepository.successfulSubscription({
+                    subscription_id: updatedSubscription._id,
+                    utm_source: user.source,
+                    userPhone: user.msisdn,
+                    totalPrice: packageObj.price_point_pkr
+                });
+            }
         }
         
         let history = {};
@@ -122,7 +147,7 @@ class BillingService{
         await this.billingHistoryRepository.createBillingHistory(history);
     }
 
-    async sendAffiliationCallback(tid, mid, user, subscription_id, package_id, paywall_id) {
+    async sendAffiliationCallback(tid, mid, user, subscription_id, package_id, paywall_id, price, source) {
         let combinedId = tid + "*" +mid;
 
         let history = {};
@@ -135,7 +160,7 @@ class BillingService{
         history.operator = 'telenor';
 
         console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
-        this.sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
+        this.sendCallBackToIdeation(mid, tid, subscription_id, user.msisdn, price, source).then(async (fulfilled) => {
             let updated = await this.subscriptionRepository.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
             if(updated){
                 console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);

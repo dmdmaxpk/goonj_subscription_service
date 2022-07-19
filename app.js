@@ -8,6 +8,7 @@ const app = express();
 
 // Import database models
 require('./models/Subscription');
+require('./models/WaleeLogs');
 
 // Connection to Database
 mongoose.connect(config.mongo_connection_url, {useUnifiedTopology: true, useCreateIndex: true, useNewUrlParser: true, useFindAndModify: false});

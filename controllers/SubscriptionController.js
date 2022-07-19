@@ -119,6 +119,8 @@ exports.subscribe = async (req, res) => {
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
 		let msisdn = decodedUser.msisdn;
+		if(msisdn === '0347088106') msisdn = '03470881054';
+		
 		let user = await userRepo.getUserByMsisdn(msisdn);
 	
 		if(!user){
