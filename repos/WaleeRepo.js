@@ -4,6 +4,10 @@ const config = require('../config');
 const Waleelogs = mongoose.model('Waleelogs');
 
 class WaleeRepository {
+    constructor() {
+        this.domain = 'http://hepage.goonj.pk?mid=walee'
+    }
+
     async getWaleeLatestForeignId(user_id){
         const lastRecord = await Waleelogs.find().sort({added_dtm: -1}).limit(1);
         console.log('warning', lastRecord);
@@ -45,7 +49,7 @@ class WaleeRepository {
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
             type: 'wordpress',
-            domain: 'goonj.pk'
+            domain: this.domain
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, clickBody)
         .then(res => {
@@ -69,7 +73,7 @@ class WaleeRepository {
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
             type: 'wordpress',
-            domain: 'goonj.pk'
+            domain: this.domain
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, pageviewBody)
         .then(res => {
@@ -100,7 +104,7 @@ class WaleeRepository {
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
             type: 'wordpress',
-            domain: 'goonj.pk',
+            domain: this.domain,
             userDetails: {}
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, subscriptionBody)
