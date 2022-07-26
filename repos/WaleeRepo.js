@@ -5,7 +5,8 @@ const Waleelogs = mongoose.model('Waleelogs');
 
 class WaleeRepository {
     constructor() {
-        this.domain = 'http://hepage.goonj.pk'
+        this.domain = 'http://hepage.goonj.pk';
+        this.referrer = 73732;
     }
 
     async getWaleeLatestForeignId(user_id){
@@ -44,7 +45,7 @@ class WaleeRepository {
         const {utm_source} = query;
         const clickBody = {
             // referrer: utm_source,
-            referrer: 8522,
+            referrer: this.referrer,
             hookType: 'Link Click',
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
@@ -68,7 +69,7 @@ class WaleeRepository {
         const pageviewBody = {
             page: '/checkout',
             // referrer: utm_source,
-            referrer: 8522,
+            referrer: this.referrer,
             hookType: 'Page Views',
             foriegn_id: await this.getWaleeLatestForeignId(),
             installed_version: '1.0.0',
@@ -93,7 +94,7 @@ class WaleeRepository {
         const subscriptionBody = {
             orderId: subscription_id,
             // referrer: utm_source,
-            referrer: 8522,
+            referrer: this.referrer,
             hookType: 'Sales',
             userPhone: userPhone,
             userMail: 'na',
