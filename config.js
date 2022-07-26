@@ -54,7 +54,7 @@ const Ideation_call_back_url = 'http://bpd.o18.click/';
 const Ideation_call_back_url_2 = 'http://210.56.13.190/goonj_callback.php/';
 const Ideation_call_back_url_3 = `https://postback.level23.nl/?currency=USD&handler=10821&hash=c4e51373f0d516d0d4fdbd7f0e544c61&tracker=`;
 const Ideation_Affpro_callback = `http://ad.propellerads.com/conversion.php?aid=3541543&pid=&tid=108058&visitor_id=`;
-const walee_api = 'https://app.walee.pk';
+const walee_api = 'https://app.walee.pk/';
 
 let config = {
     development: {
