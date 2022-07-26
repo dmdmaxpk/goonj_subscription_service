@@ -5,7 +5,7 @@ const Waleelogs = mongoose.model('Waleelogs');
 
 class WaleeRepository {
     constructor() {
-        this.domain = 'http://hepage.goonj.pk?mid=walee'
+        this.domain = 'http://hepage.goonj.pk'
     }
 
     async getWaleeLatestForeignId(user_id){
