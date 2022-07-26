@@ -5,7 +5,7 @@ const Waleelogs = mongoose.model('Waleelogs');
 
 class WaleeRepository {
     constructor() {
-        this.domain = 'http://hepage.goonj.pk';
+        this.domain = 'https://staging.wpg.walee.pk';
         this.referrer = 73732;
     }
 
