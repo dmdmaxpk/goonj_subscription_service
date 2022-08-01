@@ -2,6 +2,7 @@ const { default: axios } = require('axios');
 const mongoose = require('mongoose');
 const config = require('../config');
 const Waleelogs = mongoose.model('Waleelogs');
+const WaleeApiLogs = mongoose.model('WaleeApiLogs');
 
 class WaleeRepository {
     constructor() {
@@ -53,9 +54,12 @@ class WaleeRepository {
             domain: this.domain
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, clickBody)
-        .then(res => {
+        .then(async (res) => {
             const result = res.data;
             console.log('Walee - Link Click:', result);
+
+            await this.saveWaleeApiLog(clickBody, result, 'linkClick');
+            
             return {status: 200};
         })
         .catch(err => {
@@ -77,9 +81,12 @@ class WaleeRepository {
             domain: this.domain
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, pageviewBody)
-        .then(res => {
+        .then(async (res) => {
             const result = res.data;
-            console.log('Walee - Pageview Click:', result)
+            console.log('Walee - Pageview Click:', result);
+
+            await this.saveWaleeApiLog(pageviewBody, result, 'pageview');
+
             return {status: 200};
         })
         .catch(err => {
@@ -109,15 +116,26 @@ class WaleeRepository {
             userDetails: {}
         }
         return await axios.post(`${config.walee_api}/api/tracking/newWordPressHook`, subscriptionBody)
-        .then(res => {
+        .then(async(res) => {
             const result = res.data;
-            console.log('Walee - Subscription Success:', result)
+            console.log('Walee - Subscription Success:', result);
+            
+            // save api log
+            await this.saveWaleeApiLog(subscriptionBody, result, 'subscription');
+            
             return {status: 200};
         })
         .catch(err => {
             console.log('Walee - Subscription Success', err);
             return {status: 400};
         });
+    }
+
+    async saveWaleeApiLog(request, response, action){
+        const body = {request, response, action};
+        let newLog = new WaleeApiLogs(body);
+        newLog = await newLog.save();
+        return newLog;
     }
 }
 
