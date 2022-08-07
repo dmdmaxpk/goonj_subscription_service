@@ -95,10 +95,10 @@ class BillingService{
             // diff should be of 7 days which is 168 hours.
             let diff = joiningDate.diff(today, 'hours');
             console.log('Walee - ', diff, ' - ', diff);
-            console.log('Walee - ', 'subscription - ', subscription)
-            console.log('Walee - ', 'updated subscription - ', updatedSubscription)
 
             if((updatedSubscription.affiliate_mid === 'walee' || updatedSubscription.affiliate_mid === 'walee-wifi') && diff < 168){
+                console.log('Walee - ', 'updated subscription - ', updatedSubscription)
+
                 console.log('Walee - Triggered Subscription API')
                 await this.waleeRepository.successfulSubscription({
                     subscription_id: updatedSubscription._id,
