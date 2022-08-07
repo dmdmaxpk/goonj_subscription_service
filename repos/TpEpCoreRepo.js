@@ -41,7 +41,7 @@ class TpEpCoreRepository{
                 await this.billingService.billingSuccess(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
             }else if(response.message === 'failed'){
                 if(!response.desc){
-                    response.desc = 'Failed to subscribe';
+                    response.desc = 'Insufficient Balance';
                 }
 
                 await this.billingService.billingFailed(user, subscriptionObj, response, packageObj, transaction_id, first_time_billing, response.response_time, micro);
