@@ -102,7 +102,7 @@ class BillingService{
                 console.log('Walee - Triggered Subscription API')
                 await this.waleeRepository.successfulSubscription({
                     subscription_id: updatedSubscription._id,
-                    utm_source: user.source,
+                    utm_source: updatedSubscription.source,
                     userPhone: user.msisdn,
                     totalPrice: packageObj.price_point_pkr
                 });
