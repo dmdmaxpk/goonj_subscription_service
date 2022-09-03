@@ -15,22 +15,20 @@ class TpEpCoreRepository{
 
         if(first_time_billing === true){
             if(source == 'app'){
-                partner_id = packageObj.new_partner_id[0]
+                partner_id = packageObj.new_partner_id[0];
             }
             else if(source != 'app'){
-                partner_id = packageObj.new_partner_id[1]
+                partner_id = packageObj.new_partner_id[1];
             }
         }
         else{
             if(source == 'app'){
-                partner_id = packageObj.new_partner_id[2]
+                partner_id = packageObj.new_partner_id[2];
             }
             else if(source != 'app'){
-                partner_id = packageObj.new_partner_id[3]
+                partner_id = packageObj.new_partner_id[3];
             }
         }
-
-        console.log("partner_id", partner_id);
 
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn: user.msisdn, payment_source: user.operator, amount: packageObj.price_point_pkr, transaction_id, partner_id: partner_id, ep_token})
         .then(async(res) =>{ 
