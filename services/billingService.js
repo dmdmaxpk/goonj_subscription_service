@@ -199,7 +199,7 @@ class BillingService{
                 url = config.ideation_callback_url + `p?mid=${mid}&tid=${tid}`;
             } else if (mid === "goonj"){
                 url = config.ideation_callback_url2 + `?txid=${tid}`;
-            } else if (mid === "aff3" || mid === "aff3a"){
+            } else if (mid === "aff3"){
                 url = config.ideation_callback_url3 + `${tid}`;
             } else if (mid === "affpro"){
                 url = config.ideation_Affpro_callback + `${tid}`;
