@@ -205,6 +205,8 @@ class BillingService{
                 url = config.ideation_Affpro_callback + `${tid}`;
             } else if (mid === "1" || mid === "gdn" ){
                 return new Promise((resolve,reject) => { reject(null)})
+            } else if (mid === "affmob") {
+                url = `${config.affmob_callback}?txid=${tid}`;
             }
 
             console.log("warning - ", "affiliate url - ", "mid - ", mid, " url - ", url)
