@@ -162,7 +162,7 @@ exports.subscribe = async (req, res) => {
 				let subscription = await subscriptionRepo.getOneSubscription(user._id);
 				if(subscription){
 					if(subscription.subscription_status === 'billed' && subscription.is_allowed_to_stream === true) {
-						res.send({code: config.codes.code_success, message: 'Already Subscribed.', gw_transaction_id: gw_transaction_id});
+						res.send({code: config.codes.code_success, message: 'Welcome back. You are signed in successfully.', gw_transaction_id: gw_transaction_id});
 					}else{
 						doSubscribe(req, res, user, gw_transaction_id);
 					}
