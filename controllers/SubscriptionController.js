@@ -159,7 +159,16 @@ exports.subscribe = async (req, res) => {
 				console.log(`The user ${user.msisdn} is blacklisted`);
 				res.send({code: config.codes.code_error, message: "The user is blacklisted", gw_transaction_id: gw_transaction_id});
 			}else{
-				doSubscribe(req, res, user, gw_transaction_id);
+				let subscription = await subscriptionRepo.getOneSubscription(user._id);
+				if(subscription){
+					if(subscription.subscription_status === 'billed' && subscription.is_allowed_to_stream === true) {
+						res.send({code: config.codes.code_success, message: 'Already Subscribed.', gw_transaction_id: gw_transaction_id});
+					}else{
+						doSubscribe(req, res, user, gw_transaction_id);
+					}
+				}else{
+					doSubscribe(req, res, user, gw_transaction_id);
+				}
 			}
 		}
 	}
