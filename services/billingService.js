@@ -94,12 +94,15 @@ class BillingService{
 
             // diff should be of 7 days which is 168 hours.
             let diff = joiningDate.diff(today, 'hours');
+            console.log('Walee - ', diff, ' - ', diff);
 
-            if(updatedSubscription.affiliate_mid === 'walee' && diff < 168){
+            if((updatedSubscription.affiliate_mid === 'walee' || updatedSubscription.affiliate_mid === 'walee-wifi') && diff < 168){
+                console.log('Walee - ', 'updated subscription - ', updatedSubscription)
+
                 console.log('Walee - Triggered Subscription API')
                 await this.waleeRepository.successfulSubscription({
                     subscription_id: updatedSubscription._id,
-                    utm_source: user.source,
+                    utm_source: updatedSubscription.source,
                     userPhone: user.msisdn,
                     totalPrice: packageObj.price_point_pkr
                 });
@@ -178,33 +181,49 @@ class BillingService{
     }
 
     async sendCallBackToIdeation(mid, tid)  {
-        var url; 
-        if (mid === "1569") {
-            url = config.ideation_callback_url + `p?mid=${mid}&tid=${tid}`;
-        } else if (mid === "goonj"){
-            url = config.ideation_callback_url2 + `?txid=${tid}`;
-        } else if (mid === "aff3" || mid === "aff3a"){
-            url = config.ideation_callback_url3 + `${tid}`;
-        } else if (mid === "affpro"){
-            url = config.ideation_Affpro_callback + `${tid}`;
-        } else if (mid === "1" || mid === "gdn" ){
-            return new Promise((resolve,reject) => { reject(null)})
-        }
 
-        console.log("warning - ", "affiliate url - ", "mid - ", mid, " url - ", url)
-        return new Promise(function(resolve, reject) {
-            axios({
-                method: 'post',
-                url: url,
-                headers: {'Content-Type': 'application/x-www-form-urlencoded' }
-            }).then(function(response){
-                console.log("affpro", response.data);
-                resolve(response.data);
-            }).catch(function(err){
-                console.log("affpro - err", err.message);
-                reject(err);
+        if(mid === "aff3a") {
+            return new Promise(function(resolve, reject) {
+                axios({method: 'get', url: 'http://tracking.y2nx.com/postback?cid='+tid})
+                .then(function(response){
+                    console.log("aff3a", response.data);
+                    resolve(response.data);
+                }).catch(function(err){
+                    console.log("aff3a - err", err.message);
+                    reject(err);
+                });
             });
-        });
+        }else{
+            var url; 
+            if (mid === "1569") {
+                url = config.ideation_callback_url + `p?mid=${mid}&tid=${tid}`;
+            } else if (mid === "goonj"){
+                url = config.ideation_callback_url2 + `?txid=${tid}`;
+            } else if (mid === "aff3"){
+                url = config.ideation_callback_url3 + `${tid}`;
+            } else if (mid === "affpro"){
+                url = config.ideation_Affpro_callback + `${tid}`;
+            } else if (mid === "1" || mid === "gdn" ){
+                return new Promise((resolve,reject) => { reject(null)})
+            } else if (mid === "affmob") {
+                url = `${config.affmob_callback}?txid=${tid}`;
+            }
+
+            console.log("warning - ", "affiliate url - ", "mid - ", mid, " url - ", url)
+            return new Promise(function(resolve, reject) {
+                axios({
+                    method: 'post',
+                    url: url,
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded' }
+                }).then(function(response){
+                    console.log("affpro", response.data);
+                    resolve(response.data);
+                }).catch(function(err){
+                    console.log("affpro - err", err.message);
+                    reject(err);
+                });
+            });
+        }
     }
 }
 module.exports = BillingService;

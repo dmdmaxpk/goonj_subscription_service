@@ -112,9 +112,8 @@ class SubscriptionRepository {
         return result;
     }
 
-    async getSubscriptionBySubscriberId(user_id)  {
-        let result = await Subscription.findOne({user_id: user_id});
-        return result;
+    async getSubscriptionByUserId(user_id)  {
+        return await Subscription.findOne({user_id: user_id});
     }
     
     async getRenewableSubscriptions  ()  {

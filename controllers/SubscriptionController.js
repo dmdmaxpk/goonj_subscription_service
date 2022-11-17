@@ -119,7 +119,6 @@ exports.subscribe = async (req, res) => {
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
 		let msisdn = decodedUser.msisdn;
-		if(msisdn === '0347088106') msisdn = '03470881054';
 		
 		let user = await userRepo.getUserByMsisdn(msisdn);
 	
@@ -164,6 +163,109 @@ exports.subscribe = async (req, res) => {
 			}
 		}
 	}
+}
+
+// subscribe for ideation
+exports.subscribeNow = async(req, res) => {
+	let {msisdn, package_id, source, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid, gw_transaction_id} = req.body;
+	source = source ? source : 'ideation';
+	let user = await userRepo.getUserByMsisdn(msisdn);
+	if(!user) {
+		try{
+			await createUser(msisdn, source);
+			user = await userRepo.getUserByMsisdn(msisdn);
+		}catch(e){
+			res.send({code: config.codes.code_error, message: e.message, gw_transaction_id: gw_transaction_id})
+			return;
+		}
+	}
+
+	if(user) {
+		let packageObj = await coreRepo.getPackage(package_id);
+		if (packageObj) {
+			let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+			if(subscription) {
+				res.send({code: config.codes.code_error, message: `The subscriber '${msisdn}' already exists.`, gw_transaction_id: gw_transaction_id});
+				return;
+			}else{
+				try{
+					await subscribeAndCreateSubscription(user, packageObj, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid);
+					res.send({code: config.codes.code_success, message: 'User successfully subscribed!', gw_transaction_id: gw_transaction_id});
+					return;
+				}catch(e){
+					res.send({code: config.codes.code_error, message: e.message, gw_transaction_id: gw_transaction_id})
+					return;
+				}
+				
+			}
+		}
+	}else{
+		res.send({code: config.codes.code_error, message: 'Failed to create user.', gw_transaction_id: gw_transaction_id})
+		return;
+	}
+}
+
+createUser = async(msisdn, source) => {
+	
+	let userObj = {};
+	userObj.msisdn = msisdn;
+	userObj.source = source ? source : "app";
+
+	try{
+		let response = await tpEpCoreRepo.subscriberQuery(msisdn);
+		if(response && (response.operator === "telenor") || response.operator === 'easypaisa'){
+			try {
+				userObj.operator = response.operator;
+				await userRepo.createUser(userObj);
+				return;
+			} catch(er) {
+				console.log(er);
+				throw new Error("Something went wrong while running subsriber query");
+			}
+		}else{
+			throw new Error("Not a valid Telenor/Easypaisa number.");
+		}
+
+	}catch(err){
+		throw new Error("Subscriber query API isn't responding. Try again in few minutes.");
+	}
+}
+
+subscribeAndCreateSubscription = async(user, packageObj, payment_source, marketing_source, affiliate_tid, affiliate_mid) => {
+	
+	let subscriptionObj = {};
+	subscriptionObj.user_id = user._id;
+	subscriptionObj.paywall_id = packageObj.paywall_id;
+	subscriptionObj.subscribed_package_id = packageObj._id;
+	subscriptionObj.source = user.source;
+	subscriptionObj.payment_source = payment_source ? payment_source : "telenor";
+	subscriptionObj.user_agent = headers['user-agent'];
+	subscriptionObj.ip_address = headers['x-forwarded-for'];
+	subscriptionObj.marketing_source = marketing_source ? marketing_source : "na";
+	subscriptionObj.active = true;
+	subscriptionObj.amount_billed_today = 0;
+
+	if(affiliate_tid){
+		subscriptionObj.affiliate_unique_transaction_id = affiliate_tid;
+		subscriptionObj.should_affiliation_callback_sent = true;
+	}
+
+	if(affiliate_mid) {
+		subscriptionObj.affiliate_mid = affiliate_mid;
+		subscriptionObj.should_affiliation_callback_sent = true;
+	}
+
+	try {
+		let result = await tpEpCoreRepo.processDirectBilling(undefined, user, subscriptionObj, packageObj, true, false);
+		if(result && result.message === "success"){
+			return;
+		}else{
+			throw new Error("Failed to subscribe. Possible cause: insufficient balance");
+		}
+	} catch(err) {
+		throw new Error("Error, failed to subscribe. Try again.");
+	}
+	
 }
 
 doSubscribe = async(req, res, user, gw_transaction_id) => {
@@ -760,6 +862,27 @@ exports.status = async (req, res) => {
 		res.send({code: config.codes.code_error, message: 'Invalid msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
 }
+
+exports.checkStatus = async (req, res) => {
+	let {msisdn, gw_transaction_id} = req.body;
+	let user = await userRepo.getUserByMsisdn(msisdn);
+	if(!user) res.send({code: config.codes.code_error, message: 'No user found!', gw_transaction_id: gw_transaction_id});
+
+	let result = await subscriptionRepo.getSubscriptionByUserId(user._id);
+	if(!result) res.send({code: config.codes.code_error, data: 'No subscription found!', gw_transaction_id: gw_transaction_id});
+
+	res.send({code: config.codes.code_success, 
+		data: {
+			subscribed_package_id: result.subscribed_package_id,
+			subscription_status: result.subscription_status,
+			user_id: result.user_id,
+			auto_renewal: result.auto_renewal,
+			is_allowed_to_stream: result.is_allowed_to_stream,
+			active: result.active
+		}, 
+		gw_transaction_id: gw_transaction_id});
+}
+
 
 exports.getAllSubscriptions = async (req, res) => {
 	let gw_transaction_id = req.query.gw_transaction_id;
