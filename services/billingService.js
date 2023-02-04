@@ -5,10 +5,9 @@ const { default: axios } = require('axios');
 const moment = require('moment');
 
 class BillingService{
-    constructor({subscriptionRepository, billingHistoryRepository, waleeRepository}){
+    constructor({subscriptionRepository, billingHistoryRepository}){
         this.subscriptionRepository = subscriptionRepository;
-        this.billingHistoryRepository = billingHistoryRepository;
-        this.waleeRepository = waleeRepository;
+        this.billingHistoryRepository = billingHistoryRepository
     }
 
     // billing functions
@@ -81,31 +80,6 @@ class BillingService{
                         updatedSubscription.source
                         );
                 }
-            }
-
-            // send walee subscription hook - only first time / difference of joining and charging is less than 7 days
-            // diff should be of 7 days which is 168 hours
-            
-            let today = moment().utc();
-            today.add(5, 'h');
-
-            let joiningDate = moment(updatedSubscription.added_dtm);
-            console.log('Walee - ', today, ' - ', joiningDate);
-
-            // diff should be of 7 days which is 168 hours.
-            let diff = joiningDate.diff(today, 'hours');
-            console.log('Walee - ', diff, ' - ', diff);
-
-            if((updatedSubscription.affiliate_mid === 'walee' || updatedSubscription.affiliate_mid === 'walee-wifi') && diff < 168){
-                console.log('Walee - ', 'updated subscription - ', updatedSubscription)
-
-                console.log('Walee - Triggered Subscription API')
-                await this.waleeRepository.successfulSubscription({
-                    subscription_id: updatedSubscription._id,
-                    utm_source: updatedSubscription.source,
-                    userPhone: user.msisdn,
-                    totalPrice: packageObj.price_point_pkr
-                });
             }
         }
         

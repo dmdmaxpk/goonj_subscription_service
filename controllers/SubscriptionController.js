@@ -17,7 +17,6 @@ const fs = require('fs');
 
 const helper = require('../helper/helper');
 const  _ = require('lodash');
-const { use } = require('../routes');
 
 exports.getSubscriptionDetails = async(req, res) => {
 	let { msisdn, transaction_id } = req.query;
@@ -113,7 +112,7 @@ login = async(user_id) => {
 exports.subscribe = async (req, res) => {
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
-	let decodedUser = decodedResponse.decoded;
+	let decodedUser = {msisdn: '03476733767'};//decodedResponse.decoded;
 	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
 	if(decodedUser && decodedUser.msisdn){
@@ -174,127 +173,23 @@ exports.subscribe = async (req, res) => {
 	}
 }
 
-// subscribe for ideation
-exports.subscribeNow = async(req, res) => {
-	let {msisdn, package_id, source, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid, gw_transaction_id} = req.body;
-	source = source ? source : 'ideation';
-	let user = await userRepo.getUserByMsisdn(msisdn);
-	if(!user) {
-		try{
-			await createUser(msisdn, source);
-			user = await userRepo.getUserByMsisdn(msisdn);
-		}catch(e){
-			res.send({code: config.codes.code_error, message: e.message, gw_transaction_id: gw_transaction_id})
-			return;
-		}
-	}
-
-	if(user) {
-		let packageObj = await coreRepo.getPackage(package_id);
-		if (packageObj) {
-			let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
-			if(subscription) {
-				res.send({code: config.codes.code_error, message: `The subscriber '${msisdn}' already exists.`, gw_transaction_id: gw_transaction_id});
-				return;
-			}else{
-				try{
-					await subscribeAndCreateSubscription(user, packageObj, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid);
-					res.send({code: config.codes.code_success, message: 'User successfully subscribed!', gw_transaction_id: gw_transaction_id});
-					return;
-				}catch(e){
-					res.send({code: config.codes.code_error, message: e.message, gw_transaction_id: gw_transaction_id})
-					return;
-				}
-				
-			}
-		}
-	}else{
-		res.send({code: config.codes.code_error, message: 'Failed to create user.', gw_transaction_id: gw_transaction_id})
-		return;
-	}
-}
-
-createUser = async(msisdn, source) => {
-	
-	let userObj = {};
-	userObj.msisdn = msisdn;
-	userObj.source = source ? source : "app";
-
-	try{
-		let response = await tpEpCoreRepo.subscriberQuery(msisdn);
-		if(response && (response.operator === "telenor") || response.operator === 'easypaisa'){
-			try {
-				userObj.operator = response.operator;
-				await userRepo.createUser(userObj);
-				return;
-			} catch(er) {
-				console.log(er);
-				throw new Error("Something went wrong while running subsriber query");
-			}
-		}else{
-			throw new Error("Not a valid Telenor/Easypaisa number.");
-		}
-
-	}catch(err){
-		throw new Error("Subscriber query API isn't responding. Try again in few minutes.");
-	}
-}
-
-subscribeAndCreateSubscription = async(user, packageObj, payment_source, marketing_source, affiliate_tid, affiliate_mid) => {
-	
-	let subscriptionObj = {};
-	subscriptionObj.user_id = user._id;
-	subscriptionObj.paywall_id = packageObj.paywall_id;
-	subscriptionObj.subscribed_package_id = packageObj._id;
-	subscriptionObj.source = user.source;
-	subscriptionObj.payment_source = payment_source ? payment_source : "telenor";
-	subscriptionObj.user_agent = headers['user-agent'];
-	subscriptionObj.ip_address = headers['x-forwarded-for'];
-	subscriptionObj.marketing_source = marketing_source ? marketing_source : "na";
-	subscriptionObj.active = true;
-	subscriptionObj.amount_billed_today = 0;
-
-	if(affiliate_tid){
-		subscriptionObj.affiliate_unique_transaction_id = affiliate_tid;
-		subscriptionObj.should_affiliation_callback_sent = true;
-	}
-
-	if(affiliate_mid) {
-		subscriptionObj.affiliate_mid = affiliate_mid;
-		subscriptionObj.should_affiliation_callback_sent = true;
-	}
-
-	try {
-		let result = await tpEpCoreRepo.processDirectBilling(undefined, user, subscriptionObj, packageObj, true, false);
-		if(result && result.message === "success"){
-			return;
-		}else{
-			throw new Error("Failed to subscribe. Possible cause: insufficient balance");
-		}
-	} catch(err) {
-		throw new Error("Error, failed to subscribe. Try again.");
-	}
-	
-}
-
 doSubscribe = async(req, res, user, gw_transaction_id) => {
 	let headers = req.headers;
-	console.log("headers", headers);
 
 	if(user && user.active === true && user.is_black_listed === false){
 		
 		let newPackageId = req.body.package_id;
 		let packageObj = await coreRepo.getPackage(newPackageId);
 		if (packageObj) {
-			let subscription = await subscriptionRepo.getSubscriptionByPaywallId(user._id, packageObj.paywall_id);
-			if(!subscription){
+			let isExist = await subscriptionRepo.getSubscriptionByPaywallId(user._id, packageObj.paywall_id);
+			if(!isExist){
 				
 				// No subscription available, let's create one
 				let subscriptionObj = {};
 				subscriptionObj.user_id = user._id;
 				subscriptionObj.paywall_id = packageObj.paywall_id;
 				subscriptionObj.subscribed_package_id = newPackageId;
-				subscriptionObj.source = req.body.source ?  req.body.source : 'unknown';
+				subscriptionObj.source = req.body.source ?  req.body.source : 'na';
 				subscriptionObj.payment_source = req.body.payment_source ? req.body.payment_source : "telenor";
 				subscriptionObj.user_agent = headers['user-agent'];
 				subscriptionObj.ip_address = headers['x-forwarded-for'];
@@ -318,300 +213,58 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					subscriptionObj.affiliate_mid = req.body.affiliate_mid;
 					subscriptionObj.should_affiliation_callback_sent = true;
 				}
-
-				// Check if trial is allowed by the system
-				let sendTrialMessage = false;
-				let sendChargingMessage = false;
-
 				
-				// TODO process billing directly and create subscription
 				subscriptionObj.active = true;
 				subscriptionObj.amount_billed_today = 0;
 
 
-				// For affiliate/gdn users and for non-affiliate/non-gdn users
-				// Logic - For affiliate/gdn: daily > micro ? trial
-				// Logic - For non affiliate/non-gdn: weekly > micro ? trial
-				// Logic will behave as per package is coming in request for subscription 
-				// As in affiliate case package will be for daily so daily > micro > trial
-				// And for non, package will be weekly, so: weekly > micro > trial
-				if(packageObj.paywall_id === "ghRtjhT7"){
-					try{
-						// No micro charge for daily affiliate subscriptions
-						if(packageObj._id === 'QDfC' && (req.body.affiliate_mid === 'gdn' || req.body.affiliate_mid === 'gdn1' || req.body.affiliate_mid === 'gdn2' || req.body.affiliate_mid === 'gdn3')){
-							try {
-								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
-								console.log("direct billing status 1", result.message)
-								if(result && result.message === "success"){
-									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
-									sendChargingMessage = true;
-								}else{
-									let trial = await activateTrial(req.body.otp? req.body.otp : undefined, req.body.source, user, packageObj, subscriptionObj);
-									if(trial === "done"){
-										res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', gw_transaction_id: gw_transaction_id});
-										sendTrialMessage = true;
-									}
-								}
-							} catch(err){
-								console.log("Error while direct billing first time",err.message,user.msisdn);
-								res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
-							}
-						}else if (req.body.affiliate_mid === '1569' || req.body.affiliate_mid === 'aff3a' || req.body.affiliate_mid === 'aff3' || req.body.affiliate_mid === 'goonj' || req.body.affiliate_mid === 'tp-gdn'){
-							try {
-								let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
-								console.log("direct billing status 2", result.message)
-								if(result && result.message === "success"){
-									res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
-									sendChargingMessage = true;
-								}else{
-									let trial = await activateTrial(req.body.otp? req.body.otp : undefined, req.body.source, user, packageObj, subscriptionObj);
-									if(trial === "done"){
-										res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', gw_transaction_id: gw_transaction_id});
-										sendTrialMessage = true;
-									}
-								}
-							} catch(err){
-								console.log("Error while direct billing first time",err.message,user.msisdn);
-								res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
-							}
-						}else{
-							// Live paywall, subscription rules along with micro changing started
-							let subsResponse = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(req.body.otp, req.body.source, user, packageObj, subscriptionObj);
-							if(subsResponse && subsResponse.status === "charged"){
-								res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
-								sendChargingMessage = true;
-							}else if(subsResponse && subsResponse.status === "trial"){
-								res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', package_id: subsResponse.subscriptionObj.subscribed_package_id, gw_transaction_id: gw_transaction_id});
-								sendTrialMessage = true;
-							}else{
-								res.send({code: config.codes.code_error, message: 'Failed to subscribe package' + (subsResponse.desc ? ', possible cause: '+subsResponse.desc : ''), package_id: subsResponse.subscriptionObj ? subsResponse.subscriptionObj.subscribed_package_id : '', gw_transaction_id: gw_transaction_id});
-							}
-							subscriptionObj = subsResponse.subscriptionObj;
-							packageObj = subsResponse.subscriptionObj ? await coreRepo.getPackage(subscriptionObj.subscribed_package_id) : '';
-						}
-					}catch(err){
-						console.log("=> ", err);
-						sendTrialMessage = false;
-						sendChargingMessage = false;
-						res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
+				// expected responses of processDirectBilling
+				// {"status":"PRE_ACTIVE","activationTime":1675484672,"expireTime":1675537200,"activationChannel":"API","serviceVariant":{"id":99144,"externalId":99144,"name":"GOONJ DAILY"},"purchasePrice":5.97,"product":{"id":67,"name":"THIRD_PARTY_GOONJ","type":"EXTERNAL"},"service":{"id":77,"name":"GOONJ","renewalWindows":[{"from":"05:00","to":"12:00"},{"from":"13:00","to":"16:00"},{"from":"17:00","to":"23:00"}]}}
+				// {"status":"ACTIVE","activationTime":1675403635,"expireTime":1675450800,"activationChannel":"API","serviceVariant":{"id":99144,"externalId":99144,"name":"GOONJ DAILY"},"purchasePrice":5.97,"product":{"id":67,"name":"THIRD_PARTY_GOONJ","type":"EXTERNAL"},"service":{"id":77,"name":"GOONJ","renewalWindows":[{"from":"05:00","to":"12:00"},{"from":"13:00","to":"16:00"},{"from":"17:00","to":"23:00"}]}}
+				// { "requestId":"100157-10201433-1", "errorCode": "500.072.05", "errorMessage": "Exception during Subscribe. Response: Response{status=SUBSCRIPTION_ALREADY_EXISTS, message='null', result=null}"}
+				try {
+					let result = undefined;
+					if(subscriptionObj.payment_source === 'telenor') {
+						result = await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
+					}else{
+						result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
 					}
-				}else{
-					// comedy paywall
-					res.send({code: config.codes.code_success, message: 'Comedy subscriptions are not allowed', gw_transaction_id: gw_transaction_id});
-					/*try {
-						let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
-						if(result.message === "success"){
-							res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', 
-										gw_transaction_id: gw_transaction_id});
-							sendChargingMessage = true;
-						}else{
-							res.send({code: config.codes.code_error, message: 'Failed to subscribe.', 
-									gw_transaction_id: gw_transaction_id});
-						}
-					} catch(err){
-						console.log("Error while direct billing first time",err.message,user.msisdn);
-						res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
-					}*/
-				}
-
-				if (sendTrialMessage === true) {
-					let trial_hours = packageObj.trial_hours;
-					console.log("subscribed_package_id",subscriptionObj.subscribed_package_id, user.msisdn);
-					console.log("source",subscriptionObj.affiliate_mid,user.msisdn);
-					console.log("subscribed_package_id",constants.subscription_messages,user.msisdn);
+					console.log(result);
 					
-					let message = constants.subscription_messages[subscriptionObj.subscribed_package_id];
-					if (subscriptionObj.affiliate_mid === 'gdn'){
-						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
+					if(result && (result.respose.status === "ACTIVE" || result.message === "success")){
+						subscriptionObj.subscription_status = 'billed';
+						subscriptionObj.is_allowed_to_stream = true;
+						subscription.last_billing_timestamp = helper.setDateWithTimezone(new Date());
+
+						let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+						await billingHistoryRepo.assembleBillingHistory(user, subscription, packageObj, result.response);
+						
+						res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
+					}else if(result && (result.respose.status === "PRE_ACTIVE" || result.message === "failed")){
+						
+						subscriptionObj.subscription_status = 'trial';
+						subscriptionObj.is_allowed_to_stream = true;
+						subscriptionObj.should_affiliation_callback_sent = false;
+						subscription.last_billing_timestamp = helper.setDateWithTimezone(new Date());
+
+						let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+						await billingHistoryRepo.assembleBillingHistory(user, subscription, packageObj, result.response);
+						
+						res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', gw_transaction_id: gw_transaction_id});
+					}else {
+						console.log("First time billing failed: ",result, user.msisdn);
+						res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
 					}
-					text = message;
-					text = text.replace("%trial_hours%",trial_hours);
-					text = text.replace("%price%",packageObj.display_price_point_numeric);
-					text = text.replace("%user_id%",subscriptionObj.user_id);
-					text = text.replace("%pkg_id%",packageObj._id);
-					messageRepo.sendMessageDirectly(text, user.msisdn);
-				} else if(sendChargingMessage === true) {
-					let message = constants.subscription_messages_direct[packageObj._id];
-					message= message.replace("%price%",packageObj.display_price_point)
-					message= message.replace("%user_id%",subscriptionObj.user_id)
-					message= message.replace("%pkg_id%",packageObj._id)
-					if(subscriptionObj.affiliate_mid === 'gdn'){
-						message = constants.subscription_messages[subscriptionObj.affiliate_mid];
-					}
-				
-					messageRepo.sendMessageDirectly(message, user.msisdn);
+				} catch(err){
+					console.log("Error while direct billing first time: ",err.message, user.msisdn);
+					res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
 				}
 			}else {
-				if(subscription.active === true){
-					// Pass subscription through following checks before pushing into queue
-					await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-					let currentPackageId = subscription.subscribed_package_id;
-					let autoRenewal = subscription.auto_renewal;
-					let is_allowed_to_stream = subscription.is_allowed_to_stream;
-
-					if(subscription.queued === false){
-						let history = {};
-						history.user_id = user._id;
-						history.msisdn = user.msisdn;
-						history.subscription_id = subscription._id;
-
-						// if both subscribed and upcoming packages are same
-						if(currentPackageId === newPackageId){
-							history.source = req.body.source;
-							history.package_id = newPackageId;
-							history.paywall_id = packageObj.paywall_id;
-
-							if(subscription.subscription_status === 'billed' || subscription.subscription_status === 'trial'
-										|| subscription.subscription_status === 'graced'){
-								if(autoRenewal === true && is_allowed_to_stream === true){
-									// Already subscribed, no need to subscribed package again
-									history.billing_status = "subscription-request-received-for-the-same-package";
-									await billingHistoryRepo.createBillingHistory(history);
-									res.send({code: config.codes.code_already_subscribed, message: 'Already subscribed', gw_transaction_id: gw_transaction_id});
-								}
-								else if(autoRenewal === true && is_allowed_to_stream === false){
-									// Already subscribed, no need to subscribed package again
-									history.billing_status = "subscription-request-received-for-the-same-package";
-									await billingHistoryRepo.createBillingHistory(history);
-									res.send({code: config.codes.code_subscribed_but_unstreamable, message: 'Already Subscribed but not allowed to stream', gw_transaction_id: gw_transaction_id});
-								}
-								else{
-									// Same package - just switch on auto renewal so that the user can get charge automatically.
-									let updated = await subscriptionRepo.updateSubscription(subscription._id, {auto_renewal: true});
-									if(updated){
-										history.billing_status = "subscription-request-received-after-unsub";
-										
-										await billingHistoryRepo.createBillingHistory(history);
-										res.send({code: config.codes.code_already_subscribed, message: 'Subscribed again after unsub', gw_transaction_id: gw_transaction_id});
-									}else{
-										res.send({code: config.codes.code_error, message: 'Error updating record!', gw_transaction_id: gw_transaction_id});
-									}
-								}
-								
-							}else{
-								/* 
-								* Not already billed
-								* Let's send this item in queue and update package, auto_renewal and 
-								* billing date times once user successfully billed
-								*/
-								let nextBillingTime = new Date(subscription.next_billing_timestamp);
-								let today = new Date();
-
-								if(subscription.subscription_status === 'expired' && (nextBillingTime > today)){
-									if(subscription.last_subscription_status && subscription.last_subscription_status === "trial"){
-										try {
-											subscription.payment_source = req.body.payment_source;
-											let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
-											console.log('returned response 1', result);
-											if(result.message === "success"){
-												res.send({code: config.codes.code_success, message: 'Subscribed Successfully', gw_transaction_id: gw_transaction_id});
-											}else{
-												if(result.desc){
-													if(result.desc === 'Easypaisa OTP not found'){
-														res.send({code: config.codes.code_otp_not_found, message: result.desc, gw_transaction_id: gw_transaction_id});
-													}else{
-														res.send({code: config.codes.code_error, message: 'Failed to subscribe', gw_transaction_id: gw_transaction_id});
-													}
-												}
-											}
-										} catch(err){
-											console.log(err);
-											res.send({code: config.codes.code_error, message: 'Failed to subscribe, insufficient balance', gw_transaction_id: gw_transaction_id});
-										}
-									}else{
-										await reSubscribe(subscription, history);
-										let date = nextBillingTime.getDate()+"-"+(nextBillingTime.getMonth()+1)+"-"+nextBillingTime.getFullYear();
-										
-										let message = constants.resubscription_message.message;
-										message = message.replace("%date%", date);
-										message = message.replace("%user_id%",user._id)
-										message = message.replace("%pkg_id%",packageObj._id)
-										messageRepo.sendMessageDirectly(message, user.msisdn);
-										
-										res.send({code: config.codes.code_already_subscribed, message: 'You have already paid till '+date+'. Continue watching ', gw_transaction_id: gw_transaction_id});
-									}
-								}else{
-									try {
-										subscription.payment_source = req.body.payment_source;
-										let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
-										console.log('returned response 2: ', result);
-										if(result.message === "success"){
-
-											let message = constants.subscription_messages_direct[packageObj._id];
-											message = message.replace("%price%",packageObj.display_price_point)
-											message = message.replace("%user_id%",user._id)
-											message = message.replace("%pkg_id%",packageObj._id)
-											messageRepo.sendMessageDirectly(message, user.msisdn);
-
-											res.send({code: config.codes.code_success, message: 'Subscribed Successfully chance', gw_transaction_id: gw_transaction_id});
-										}else{
-											res.send({code: config.codes.code_error, message: `Failed to subscribe, possible cause: ${result.desc ? result.desc : 'insufficient balance'}`, gw_transaction_id: gw_transaction_id});
-										}
-									} catch(err){
-										console.log(err);
-										res.send({code: config.codes.code_error, message: 'Failed to subscribe, insufficient balance', gw_transaction_id: gw_transaction_id});
-									}
-								}
-							}
-						}else{
-								// request is coming for the same paywall but different package
-								if (subscription.subscription_status === "billed"){
-									let newPackageObj = await coreRepo.getPackage(newPackageId);
-									let currentPackageObj = await coreRepo.getPackage(currentPackageId);
-
-									if(newPackageObj.package_duration > currentPackageObj.package_duration){
-										// It means switching from daily to weekly, process billing
-										try {
-											let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
-											console.log('returned response 3:', result);
-											if(result && result.message === "success"){
-												res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
-											}else{
-												res.send({code: config.codes.code_error, message: `Failed to switch package, possible cause: ${result.desc ? result.desc : 'insufficient balance'}`, gw_transaction_id: gw_transaction_id});
-											}
-										} catch(graceErr){
-											console.log(graceErr);
-											res.send({code: config.codes.code_error, message: 'Failed to switch package, insufficient balance', gw_transaction_id: gw_transaction_id});
-										}
-									}else{
-										// It means, package switching from weekly to daily // Weekly to daily switch message added
-										let updated = await subscriptionRepo.updateSubscription(subscription._id, {auto_renewal: true, subscribed_package_id:newPackageId});
-										let nextBillingDate = new Date(updated.next_billing_timestamp);
-										nextBillingDate = nextBillingDate.toLocaleDateString();
-										history.paywall_id = packageObj.paywall_id;
-										history.package_id = newPackageId;
-										history.billing_status = "package_change_upon_user_request";
-										await billingHistoryRepo.createBillingHistory(history);
-										let message = constants.message_on_weekly_to_daily_switch.message;
-										let text = message;
-										text = text.replace("%pkg_id%",packageObj._id);
-										text = text.replace("%user_id%",user._id);
-										text = text.replace("%current_date%", nextBillingDate);
-										text = text.replace("%next_date%", nextBillingDate);
-										messageRepo.sendMessageDirectly(text, user.msisdn);
-										console.log("text", text);
-										res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
-									}
-								} else if (subscription.subscription_status === "graced" || subscription.subscription_status === "expired" || subscription.subscription_status === "trial" ) {
-								try {
-									let result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscription, packageObj,false);
-									console.log('returned response 4:', result);
-									if(result.message === "success"){
-										res.send({code: config.codes.code_success, message: 'Package successfully switched.', gw_transaction_id: gw_transaction_id});
-									}else{
-										res.send({code: config.codes.code_error, message: `Failed to switch package, possible cause: ${result.desc ? result.desc : 'insufficient balance'}`, gw_transaction_id: gw_transaction_id});
-									}
-								} catch(graceErr){
-									console.log(graceErr);
-									res.send({code: config.codes.code_error, message: 'Failed to switch package, insufficient balance', gw_transaction_id: gw_transaction_id});
-								}
-							} else {
-								res.send({code: config.codes.code_error, message: 'Failed to switch package,status not present', gw_transaction_id: gw_transaction_id});
-							}
-						}
-					}else{
-						res.send({code: config.codes.code_already_in_queue, message: 'The user is already in queue for processing.', gw_transaction_id: gw_transaction_id});
-					}
+				if(isExist.active === true){
+					await coreRepo.createViewLog(user._id, isExist._id, isExist.source, isExist.payment_source, isExist.marketing_source);
+					res.send({code: config.codes.code_already_subscribed, message: 'Subscriber already exists', gw_transaction_id: gw_transaction_id});
 				}else{
 					res.send({code: config.codes.code_error, message: 'The susbcriber is not active.', gw_transaction_id: gw_transaction_id});
 				}
@@ -622,144 +275,6 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 	} else {
 		res.send({code: config.codes.code_error, message: 'Blocked user', gw_transaction_id: gw_transaction_id});
 	}
-}
-
-activateTrial = async(otp, source, user, packageObj, subscriptionObj) => {
-
-	console.log("warning", "trial sub obj", subscriptionObj);
-	
-	let trial_hours = packageObj.trial_hours;
-	if (subscriptionObj.source === 'daraz'){
-		trial_hours = 30;
-	}
-
-	let billingHistory = {};
-	if(subscriptionObj.payment_source === "easypaisa"){
-		packageObj.price_point_pkr = 1;
-		let response = await tpEpCoreRepo.processDirectBilling(otp, user, subscriptionObj, packageObj, true);
-		console.log('returned response5: ', result);
-		if(response.success){
-			billingHistory.transaction_id = response.api_response.response.orderId;
-			billingHistory.operator_response = response.api_response;
-		}
-	}
-
-	// Success billing
-
-
-	let serverDate = new Date();
-	let localDate = helper.setDateWithTimezone(serverDate);
-	let nextBilling = _.clone(localDate);
-	nextBilling = nextBilling.setHours(nextBilling.getHours() + trial_hours);
-
-	subscriptionObj.last_billing_timestamp = localDate;
-	subscriptionObj.next_billing_timestamp = nextBilling;
-	subscriptionObj.subscription_status = 'trial';
-	subscriptionObj.is_allowed_to_stream = true;
-	subscriptionObj.should_affiliation_callback_sent = false;
-
-	let checkSubscription = await subscriptionRepo.getSubscriptionByPackageId(user._id, packageObj._id);
-	let subscription = undefined;
-
-	if(checkSubscription === null){
-		subscription = await subscriptionRepo.createSubscription(subscriptionObj);
-	}
-	else{
-		subscription = await subscriptionRepo.updateSubscription(checkSubscription._id, subscriptionObj);
-	}
-	
-	billingHistory.user_id = user._id;
-	billingHistory.msisdn = user.msisdn;
-	billingHistory.subscription_id = subscription._id;
-	billingHistory.paywall_id = packageObj.paywall_id;
-	billingHistory.package_id = packageObj._id;
-	billingHistory.billing_status = 'trial';
-	billingHistory.source = source;
-	billingHistory.operator = subscriptionObj.payment_source;
-	await billingHistoryRepo.createBillingHistory(billingHistory);
-	await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-
-	return "done";
-}
-
-doSubscribeUsingSubscribingRuleAlongWithMicroCharging = async(otp, source, user, packageObj, subscriptionObj) => {
-	return new Promise(async(resolve, reject) => {
-		let dataToReturn = {};
-
-		try {
-			if(subscriptionObj.try_micro_charge_in_next_cycle){
-				console.log("Trying micro charging for rs. ", subscriptionObj.micro_price_point);
-			}else{
-				console.log("Trying direct billing with mc rules for ", packageObj._id);
-			}
-			subscriptionObj.subscribed_package_id = packageObj._id;
-			console.log("otp", otp)
-			let result = await tpEpCoreRepo.processDirectBilling(otp, user, subscriptionObj, packageObj, true, subscriptionObj.try_micro_charge_in_next_cycle ? true : false);
-			console.log("micro direct billing response", result);
-			if(result.message === "success"){
-				dataToReturn.status = "charged";
-				dataToReturn.subscriptionObj = subscriptionObj;
-				resolve(dataToReturn);
-			}else {
-				if(result.desc && result.desc !== 'Insufficient Balance'){
-					dataToReturn.desc = result.desc;
-					dataToReturn.status = "failed";
-					dataToReturn.subscriptionObj = subscriptionObj;
-					resolve(dataToReturn);
-					return;
-				}
-
-				let pinLessTokenNumber = result.subscriptionObj ? result.subscriptionObj.ep_token : undefined;
-				if(pinLessTokenNumber){
-					subscriptionObj.ep_token = pinLessTokenNumber;
-				}
-
-				let micro_price_points = packageObj.micro_price_points;
-				if(micro_price_points.length > 0){
-					let currentIndex = (micro_price_points.length - 1);
-
-					if(subscriptionObj.try_micro_charge_in_next_cycle === true){
-						currentIndex = micro_price_points.findIndex(x => x === subscriptionObj.micro_price_point);
-						currentIndex -= 1;
-					}
-
-					if(currentIndex >= 0){
-						// hit and try for micro
-						packageObj.price_point_pkr = micro_price_points[currentIndex];
-						subscriptionObj.try_micro_charge_in_next_cycle = true;
-						subscriptionObj.micro_price_point = micro_price_points[currentIndex];
-						let response = await doSubscribeUsingSubscribingRuleAlongWithMicroCharging(otp, source, user, packageObj, subscriptionObj);
-						resolve(response);
-					}else{
-						if(otp){
-							dataToReturn.desc = "Insufficient balance, please recharge and try again.";
-							dataToReturn.status = "failed";
-							resolve(dataToReturn);
-							return;
-						}else{
-							//activate trial
-							console.log("activating trial after micro charging attempts are done");
-							subscriptionObj.try_micro_charge_in_next_cycle = false;
-							subscriptionObj.micro_price_point = 0;
-							subscriptionObj.should_affiliation_callback_sent = false;
-							let trial = await activateTrial(otp, source, user, packageObj, subscriptionObj);
-							if(trial === "done"){
-								console.log("trial activated successfully");
-								dataToReturn.status = "trial";
-								dataToReturn.subscriptionObj = subscriptionObj;
-								resolve(dataToReturn);
-							}
-						}
-					}
-				}
-			}
-		} catch(err){
-			console.log("Error while direct billing", err, user.msisdn);
-			dataToReturn.status = "error";
-			dataToReturn.subscriptionObj = subscriptionObj;
-			reject(dataToReturn);
-		}
-	});
 }
 
 reSubscribe = async(subscription, history) => {

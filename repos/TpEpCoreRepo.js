@@ -6,6 +6,15 @@ class TpEpCoreRepository{
     constructor({billingService}){
         this.billingService = billingService;
     }
+
+    async subscribe(msisdn, servieId){
+        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/subscribe`, {msisdn, servieId})
+        .then(async(res) =>{ 
+            return res.data;
+        }).catch(err =>{
+            return err
+        })
+    }
     
     async processDirectBilling(otp, user, subscriptionObj, packageObj, first_time_billing, micro){
         let transaction_id = subscriptionObj.payment_source == 'easypaisa' ? user.msisdn + '_' + nanoid(8) : user.msisdn + '_' + user._id + '_' + nanoid(10);
