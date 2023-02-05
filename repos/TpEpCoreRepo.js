@@ -7,9 +7,8 @@ class TpEpCoreRepository{
         this.billingService = billingService;
     }
 
-    async subscribe(msisdn, servieId){
-        console.log(msisdn, servieId);
-        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/subscribe`, {msisdn, servieId})
+    async subscribe(msisdn, serviceId){
+        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/subscribe`, {msisdn, serviceId})
         .then(async(res) =>{ 
             return res.data;
         }).catch(err =>{
