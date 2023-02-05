@@ -3,7 +3,7 @@ const router = express.Router();
 const controller = require('../controllers/SubscriptionController');
 
 router.route('/affiliate-subscriptions-count').get(controller.count_affiliate_subscriptions);
-router.route('/subscriber').post(controller.subscribe);
+router.route('/subscribe').post(controller.subscribe);
 router.route('/checkStatus').post(controller.checkStatus);
 router.route('/unsubscribe').post(controller.unsubscribe);
 router.route('/sms-unsub').post(controller.unsubscribe);

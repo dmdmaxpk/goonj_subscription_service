@@ -15,7 +15,6 @@ class BillingHistoryRepository {
     async assembleBillingHistory(user, subscription, packageObj, response) {
         let history = {};
 
-        history._id = new ObjectID();
         history.user_id = user._id;
         history.msisdn = user.msisdn;
         history.subscription_id = subscription._id;
@@ -26,11 +25,7 @@ class BillingHistoryRepository {
         history.source = subscription.source;
         history.operator = subscription.payment_source?subscription.payment_source:'telenor';
         history.price = packageObj.price_point_pkr;
-        history.billing_dtm = helper.setDateWithTimezone(new Date())
-        
-        console.log('$$:',JSON.stringify(history),':$$');
-        await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
-        await localRabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
+        this.createBillingHistory(history);
     }
 
     async getExpiryHistory(user_id){
@@ -43,6 +38,18 @@ class BillingHistoryRepository {
             return err
         })
     }
+
+    async createBillingHistory(history){
+        var objectId = new ObjectID();
+        
+        history._id = objectId;
+        history.billing_dtm = helper.setDateWithTimezone(new Date())
+        
+        console.log('$$:',JSON.stringify(history),':$$');
+        await rabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
+        await localRabbitMq.addInQueue(config.queueNames.billingHistoryDispatcher, history);
+    }
+
 }
 
 module.exports = BillingHistoryRepository;
