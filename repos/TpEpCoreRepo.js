@@ -8,6 +8,7 @@ class TpEpCoreRepository{
     }
 
     async subscribe(msisdn, servieId){
+        console.log(msisdn, servieId);
         return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/subscribe`, {msisdn, servieId})
         .then(async(res) =>{ 
             return res.data;
