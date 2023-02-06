@@ -460,14 +460,15 @@ exports.unsubscribe = async (req, res) => {
 		let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
 		let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
 		if(subscription) {
-			//{"requestId": "74803-26204131-1", "message": "SUCCESS"}
+			//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
+			//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
 			if(subscription.subscription_status === 'expired') {
 				res.send({code: config.codes.code_success, message: 'Already unsubscribed', gw_transaction_id: gw_transaction_id});
 				return;
 			}
 			
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
-			if(tpResponse.message === "SUCCESS") {
+			if(tpResponse.response.message === "SUCCESS") {
 				await subscriptionRepo.updateSubscription(subscription._id, 
 				{
 					auto_renewal: false, 
