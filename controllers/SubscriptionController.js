@@ -162,12 +162,10 @@ exports.subscribe = async (req, res) => {
 				if(subscription){
 					if(subscription.subscription_status === 'billed' && subscription.is_allowed_to_stream === true) {
 						res.send({code: config.codes.code_success, message: 'Welcome back. You are signed in successfully.', gw_transaction_id: gw_transaction_id});
-					}else{
-						doSubscribe(req, res, user, gw_transaction_id);
 					}
-				}else{
-					doSubscribe(req, res, user, gw_transaction_id);
 				}
+
+				doSubscribe(req, res, user, gw_transaction_id);
 			}
 		}
 	}
@@ -262,11 +260,38 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
 				}
 			}else {
-				if(isExist.active === true){
-					await coreRepo.createViewLog(user._id, isExist._id, isExist.source, isExist.payment_source, isExist.marketing_source);
-					res.send({code: config.codes.code_already_subscribed, message: 'Subscriber already exists', gw_transaction_id: gw_transaction_id});
-				}else{
-					res.send({code: config.codes.code_error, message: 'The susbcriber is not active.', gw_transaction_id: gw_transaction_id});
+				let subscriptionObj = {};
+				try {
+					let result = undefined;
+					if(isExist.payment_source === 'telenor') {
+						result = await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
+					}else{
+						result = await tpEpCoreRepo.processDirectBilling(req.body.otp? req.body.otp : undefined, user, subscriptionObj, packageObj,true);
+					}
+					console.log("Subscription TP Response For Existing But Expired Customer: ", result);
+					
+					if(result && (result.respose.status === "ACTIVE" || result.message === "success")){
+						subscriptionObj.subscription_status = 'billed';
+						subscriptionObj.is_allowed_to_stream = true;
+						subscriptionObj.last_billing_timestamp = helper.setDateWithTimezone(new Date());
+
+						let date = new Date();
+						date.setHours(date.getHours() + packageObj.package_duration);
+
+						subscriptionObj.next_billing_timestamp = helper.setDateWithTimezone(date)
+
+						let subscription = await subscriptionRepo.updateSubscription(isExist._id, subscriptionObj);
+						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+						await billingHistoryRepo.assembleBillingHistory(user, subscription, packageObj, result.response);
+						
+						res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
+					}else {
+						console.log("Already existing user billing failed: ",result, user.msisdn);
+						res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
+					}
+				} catch(err){
+					console.log("Error while direct billing first time: ",err.message, user.msisdn);
+					res.send({code: config.codes.code_error, message: 'Failed to subscribe package, please try again', gw_transaction_id: gw_transaction_id});
 				}
 			}
 		} else {
