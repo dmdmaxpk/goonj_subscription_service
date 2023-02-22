@@ -229,7 +229,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					}
 					console.log(result);
 					
-					if(result && (result.respose.status === "ACTIVE" || result.message === "success")){
+					if(result && (result.response.status === "ACTIVE" || result.message === "success")){
 						subscriptionObj.subscription_status = 'billed';
 						subscriptionObj.is_allowed_to_stream = true;
 						subscription.last_billing_timestamp = helper.setDateWithTimezone(new Date());
@@ -239,7 +239,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 						await billingHistoryRepo.assembleBillingHistory(user, subscription, packageObj, result.response);
 						
 						res.send({code: config.codes.code_success, message: 'User Successfully Subscribed!', gw_transaction_id: gw_transaction_id});
-					}else if(result && (result.respose.status === "PRE_ACTIVE" || result.message === "failed")){
+					}else if(result && (result.response.status === "PRE_ACTIVE" || result.message === "failed")){
 						
 						subscriptionObj.subscription_status = 'trial';
 						subscriptionObj.is_allowed_to_stream = true;
@@ -270,7 +270,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					}
 					console.log("Subscription TP Response For Existing But Expired Customer: ", result);
 					
-					if(result && (result.respose.status === "ACTIVE" || result.message === "success")){
+					if(result && (result.response.status === "ACTIVE" || result.message === "success")){
 						subscriptionObj.subscription_status = 'billed';
 						subscriptionObj.is_allowed_to_stream = true;
 						subscriptionObj.last_billing_timestamp = helper.setDateWithTimezone(new Date());
