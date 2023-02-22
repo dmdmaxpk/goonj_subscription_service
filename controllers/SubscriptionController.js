@@ -457,8 +457,8 @@ exports.unsubscribe = async (req, res) => {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 	if(user){
-		let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
 		let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+		let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
 		if(subscription) {
 			//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
 			//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
