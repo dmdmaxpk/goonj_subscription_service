@@ -492,6 +492,7 @@ exports.unsubscribe = async (req, res) => {
 				return;
 			}
 			
+			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
 			console.log('Unsub TP Response', tpResponse);
 
