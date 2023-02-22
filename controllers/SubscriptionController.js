@@ -468,6 +468,8 @@ exports.unsubscribe = async (req, res) => {
 			}
 			
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
+			console.log('Unsub TP Response', tpResponse);
+
 			if(tpResponse.response.message === "SUCCESS") {
 				await subscriptionRepo.updateSubscription(subscription._id, 
 				{
