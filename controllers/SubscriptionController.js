@@ -828,12 +828,6 @@ exports.status = async (req, res) => {
 
 	let msisdn = req.body.msisdn;
 
-	if(msisdn === '03476733767') {
-		res.send({code: config.codes.code_error, data: 'No subscriptions was found', gw_transaction_id: gw_transaction_id});
-		return;
-	}
-
-
 	let package_id = req.body.package_id;
 	let user_id = req.body.user_id;
 	let marketing_source = req.body.marketing_source ? req.body.marketing_source : 'na';
