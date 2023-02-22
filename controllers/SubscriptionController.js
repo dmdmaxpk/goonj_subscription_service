@@ -273,6 +273,7 @@ doSubscribe = async(req, res, user, gw_transaction_id) => {
 					if(result && (result.response.status === "ACTIVE" || result.message === "success")){
 						subscriptionObj.subscription_status = 'billed';
 						subscriptionObj.is_allowed_to_stream = true;
+						subscriptionObj.subscribed_package_id = newPackageId;
 						subscriptionObj.last_billing_timestamp = helper.setDateWithTimezone(new Date());
 
 						let date = new Date();
