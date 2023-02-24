@@ -116,7 +116,9 @@ exports.subscribe = async (req, res) => {
 	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
 	//if(req.body.affiliate_mid) return;
-
+	decodedUser.msisdn = '03427729484';
+	req.body.package_id = 'QDfC';
+	
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
 		let msisdn = decodedUser.msisdn;
