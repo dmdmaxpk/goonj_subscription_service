@@ -115,7 +115,7 @@ exports.subscribe = async (req, res) => {
 	let decodedUser = decodedResponse.decoded;
 	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
-	if(req.body.affiliate_mid) return;
+	//if(req.body.affiliate_mid) return;
 
 	if(decodedUser && decodedUser.msisdn){
 		let payment_source = req.body.payment_source;
