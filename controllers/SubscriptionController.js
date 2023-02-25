@@ -1108,7 +1108,7 @@ exports.unsubscribe = async (req, res) => {
 			console.log('Unsub TP Response', tpResponse);
 
 			//if(tpResponse.response.message === "SUCCESS") {
-			if(tpResponse.response.message === "SUCCESS") {
+			if(tpResponse) {
 				await subscriptionRepo.updateSubscription(subscription._id, 
 				{
 					auto_renewal: false, 
