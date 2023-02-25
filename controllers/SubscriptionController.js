@@ -1135,6 +1135,17 @@ exports.unsubscribe = async (req, res) => {
 				await billingHistoryRepo.createBillingHistory(history);
 				res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
 			}else{
+				let history = {};
+				history.user_id = user._id;
+				history.msisdn = user.msisdn;
+				history.package_id = subscription.subscribed_package_id;
+				history.subscription_id = subscription._id;
+				history.billing_status = 'unsubscribe-request-received-and-failed';
+				history.source = source ? source : subscription.source;
+				history.operator = user.operator;
+				history.operator_response = tpResponse.response;
+				await billingHistoryRepo.createBillingHistory(history);
+
 				res.send({code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id});	
 			}
 			
