@@ -59,6 +59,24 @@ class BillingHistoryRepository {
             return err
         })
     }
+
+    async assembleBillingHistoryV2(user, subscription, packageObj, response) {
+        let history = {};
+
+        history.user_id = user._id;
+        history.msisdn = user.msisdn;
+        history.subscription_id = subscription._id;
+        history.paywall_id = packageObj.paywall_id;
+        history.package_id = subscription.subscribed_package_id;
+        history.operator_response = response;
+        history.billing_status = response.status === 'ACTIVE' ? 'Success' : (response.status === 'PRE_ACTIVE' ? 'trial' : 'Failed');
+        history.source = subscription.source;
+        history.operator = subscription.payment_source?subscription.payment_source:'telenor';
+        history.price = packageObj.price_point_pkr;
+        this.createBillingHistory(history);
+    }
+
+
 }
 
 module.exports = BillingHistoryRepository;
