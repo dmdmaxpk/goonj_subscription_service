@@ -1086,7 +1086,6 @@ exports.unsubscribe = async (req, res) => {
 	let msisdn = req.body.msisdn;
 	let user_id = req.body.user_id;
 	let source = req.body.source;
-	let package_id = req.body.package_id;
 
 	if (user_id) {
 		user = await userRepo.getUserById(user_id);
@@ -1094,88 +1093,59 @@ exports.unsubscribe = async (req, res) => {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 	if(user){
-			let subscriptions = [];
-			if(package_id){
-				let subscription = await subscriptionRepo.getSubscriptionByPackageId(user._id, package_id);
-				subscriptions.push(subscription);
-			}else{
-				subscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
+		let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+		let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
+		if(subscription) {
+			//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
+			//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
+			if(subscription.subscription_status === 'expired') {
+				res.send({code: config.codes.code_success, message: 'Already unsubscribed', gw_transaction_id: gw_transaction_id});
+				return;
 			}
+			
+			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
+			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
+			console.log('Unsub TP Response', tpResponse);
 
-			let unSubCount = 0;
-
-			if(subscriptions.length > 0){
-				for(let i = 0; i < subscriptions.length; i++){
-					let subscription = subscriptions[i];
-
-					let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
-					let result = await subscriptionRepo.updateSubscription(subscription._id, 
-					{
-						auto_renewal: false, 
-						consecutive_successive_bill_counts: 0,
-						is_allowed_to_stream: false,
-						is_billable_in_this_cycle: false,
-						queued: false,
-						try_micro_charge_in_next_cycle: false,
-						micro_price_point: 0,
-						last_subscription_status: subscription.subscription_status,
-						subscription_status: "expired",
-						priority: 0,
-						amount_billed_today: 0
-					});
-					
-					let history = {};
-					history.user_id = user._id;
-					history.msisdn = user.msisdn;
-					history.paywall_id = packageObj.paywall_id;
-					history.package_id = packageObj._id;
-					history.subscription_id = subscription._id;
-					history.billing_status = 'unsubscribe-request-received-and-expired';
-					history.source = source ? source : subscription.source;
-					history.operator = user.operator;
-					result = await billingHistoryRepo.createBillingHistory(history);
-					
-					unSubCount += 1;
-					// if(subscription.marketing_source && subscription.marketing_source !== 'none'){
-						
-					// 	// This user registered from a marketer, let's put this user in gray list
-					// 	result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
-					// 	result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
-					// 	if(result){
-					// 		unSubCount += 1;
-					// 	}
-					// }else{
-					// 	unSubCount += 1;
-					// }
-				}
-
-				if(unSubCount === subscriptions.length){
-					// send sms
-					let smsText;
-					if(package_id == 'QDfG'){
-						smsText = `Apki Goonj TV per Live TV Weekly ki subscription khatm kr di gai ha. Phr se subscribe krne k lye link par click karen https://www.goonj.pk`;
-					}
-					else if(package_id == 'QDfC'){
-						smsText = `Moaziz saarif, ap ki Goonj Daily ki service khatam kar de gae hai. Dobara Rs.5+tax/day subscribe krny k liye link per click karain https://www.goonj.pk`
-					}
-					else{
-						smsText = `Moaziz saarif, ap ki Goonj ki service khatam kar de gae hai. Dobara subscribe krny k liye link per click karain https://www.goonj.pk`
-					}
-					console.log("text", smsText)
-
-					messageRepo.sendMessageDirectly(smsText,user.msisdn);
-
-					res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
-				}else{
-					res.send({code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id});	
-				}
+			if(tpResponse.response.message === "SUCCESS") {
+				await subscriptionRepo.updateSubscription(subscription._id, 
+				{
+					auto_renewal: false, 
+					consecutive_successive_bill_counts: 0,
+					is_allowed_to_stream: false,
+					is_billable_in_this_cycle: false,
+					queued: false,
+					try_micro_charge_in_next_cycle: false,
+					micro_price_point: 0,
+					last_subscription_status: subscription.subscription_status,
+					subscription_status: "expired",
+					priority: 0,
+					amount_billed_today: 0
+				});
+				
+				let history = {};
+				history.user_id = user._id;
+				history.msisdn = user.msisdn;
+				history.package_id = subscription.subscribed_package_id;
+				history.subscription_id = subscription._id;
+				history.billing_status = 'unsubscribe-request-received-and-expired';
+				history.source = source ? source : subscription.source;
+				history.operator = user.operator;
+				history.operator_response = tpResponse.response;
+				await billingHistoryRepo.createBillingHistory(history);
+				res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
 			}else{
-				res.send({code: config.codes.code_error, message: 'No subscription found!', gw_transaction_id: gw_transaction_id});	
+				res.send({code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id});	
 			}
+			
+ 		}else{
+			res.send({code: config.codes.code_error, message: 'No subscription found!', gw_transaction_id: gw_transaction_id});	
+		}
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid user/msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
 }
+
 
 exports.ccd_unsubscribe = async(req, res) => {
 	try{
