@@ -995,7 +995,7 @@ exports.status = async (req, res) => {
 	if(user){
 			let result;
 			if(package_id){
-				result = await subscriptionRepo.getSubscriptionByPackageId(user._id, package_id);
+				result = await subscriptionRepo.getSubscriptionByUserId(user._id);
 			}
 			
 			if(result){
