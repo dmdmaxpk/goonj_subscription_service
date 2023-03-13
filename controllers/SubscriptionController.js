@@ -344,17 +344,22 @@ exports.subscribeNow = async(req, res) => {
 						return;
 
 					}else{
-						// if status = INACTIVE
-						subscriptionObj.subscription_status = 'expired';
-						subscriptionObj.is_allowed_to_stream = false;
-						subscriptionObj.amount_billed_today = 0;
 
-						let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
-						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-						await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+						setTimeout(async() => {
+							subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
 
-						res.send({code: config.codes.code_error, message: 'Failed to subscribe, please try again', gw_transaction_id: gw_transaction_id});
-						return;
+							// already exist
+							subscriptionObj.subscription_status = 'trial';
+							subscriptionObj.is_allowed_to_stream = false;
+							subscriptionObj.amount_billed_today = 0;
+
+							let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+							await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+
+							res.send({code: config.codes.code_error, message: 'Failed to subscribe, please try again', gw_transaction_id: gw_transaction_id});
+							return;
+						}, 5000);
 					}
 				}
 			}else{
