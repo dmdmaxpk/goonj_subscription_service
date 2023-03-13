@@ -182,12 +182,14 @@ exports.subscribeNow = async(req, res) => {
 	let decodedUser = decodedResponse.decoded;
 	let headers = req.headers;
 
+	req.body.package_id = 'QDfC';
+
 	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
 	if(decodedUser && decodedUser.msisdn){
 		let {msisdn, package_id, source, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid} = req.body;
 		source = source ? source : 'na';
-		
+
 		let user = await userRepo.getUserByMsisdn(msisdn);
 		if(!user) {
 			try{
