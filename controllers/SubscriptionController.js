@@ -350,7 +350,7 @@ exports.subscribeNow = async(req, res) => {
 
 							// already exist
 							subscriptionObj.subscription_status = 'trial';
-							subscriptionObj.is_allowed_to_stream = false;
+							subscriptionObj.is_allowed_to_stream = true;
 							subscriptionObj.amount_billed_today = 0;
 
 							subscription = await subscriptionRepo.createSubscription(subscriptionObj);
