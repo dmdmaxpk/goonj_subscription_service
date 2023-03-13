@@ -180,6 +180,8 @@ exports.subscribeNow = async(req, res) => {
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let decodedResponse = await coreRepo.getDecoded(req);
 	let decodedUser = decodedResponse.decoded;
+	let headers = req.headers;
+	
 	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
 	if(decodedUser && decodedUser.msisdn){
