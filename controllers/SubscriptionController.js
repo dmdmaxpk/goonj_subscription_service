@@ -357,7 +357,7 @@ exports.subscribeNow = async(req, res) => {
 							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
 							await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
 
-							res.send({code: config.codes.code_error, message: 'Failed to subscribe, please try again', gw_transaction_id: gw_transaction_id});
+							res.send({code: config.codes.code_success, message: 'User signed-in successfully.', gw_transaction_id: gw_transaction_id});
 							return;
 						}, 5000);
 					}
