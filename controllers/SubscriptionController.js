@@ -182,7 +182,7 @@ exports.subscribeNow = async(req, res) => {
 	let decodedUser = decodedResponse.decoded;
 	let headers = req.headers;
 
-	req.body.package_id = 'QDfC';
+	//req.body.package_id = 'QDfC';
 
 	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
