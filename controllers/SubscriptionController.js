@@ -346,14 +346,14 @@ exports.subscribeNow = async(req, res) => {
 					}else{
 
 						setTimeout(async() => {
-							subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+							let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
 
 							// already exist
 							subscriptionObj.subscription_status = 'trial';
 							subscriptionObj.is_allowed_to_stream = false;
 							subscriptionObj.amount_billed_today = 0;
 
-							let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+							subscription = await subscriptionRepo.createSubscription(subscriptionObj);
 							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
 							await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
 
