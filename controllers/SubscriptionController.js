@@ -181,7 +181,7 @@ exports.subscribeNow = async(req, res) => {
 	let decodedResponse = await coreRepo.getDecoded(req);
 	let decodedUser = decodedResponse.decoded;
 	let headers = req.headers;
-	
+
 	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
 
 	if(decodedUser && decodedUser.msisdn){
@@ -303,7 +303,6 @@ exports.subscribeNow = async(req, res) => {
 					}
 
 					
-
 					if(chargingResponse && (chargingResponse.response.status === "ACTIVE" || chargingResponse.message === 'success')){
 						let serverDate = new Date();
 						let localDate = helper.setDateWithTimezone(serverDate);
@@ -345,6 +344,12 @@ exports.subscribeNow = async(req, res) => {
 						return;
 
 					}else{
+						// if status = INACTIVE
+						subscriptionObj.subscription_status = 'expired';
+						subscriptionObj.is_allowed_to_stream = false;
+						subscriptionObj.amount_billed_today = 0;
+
+						let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
 						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
 						await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
 
