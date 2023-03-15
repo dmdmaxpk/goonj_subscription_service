@@ -421,7 +421,7 @@ exports.subscribeNow = async(req, res) => {
 									localSubscription.should_affiliation_callback_sent === true){
 									if(localSubscription.affiliate_mid == 'walee' || ((localSubscription.source === "HE" || localSubscription.source === "affiliate_web") && localSubscription.affiliate_mid != "1")) {
 										// Send affiliation callback
-										this.sendAffiliationCallback(
+										sendAffiliationCallback(
 											localSubscription.affiliate_unique_transaction_id, 
 											localSubscription.affiliate_mid,
 											user,
