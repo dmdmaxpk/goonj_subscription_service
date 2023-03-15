@@ -174,6 +174,82 @@ exports.subscribe = async (req, res) => {
 	}
 }
 
+sendAffiliationCallback = async(tid, mid, user, subscription_id, package_id, paywall_id, price, source) => {
+	let combinedId = tid + "*" +mid;
+
+	let history = {};
+	history.user_id = user._id;
+	history.msisdn = user.msisdn;
+	history.paywall_id = paywall_id;
+	history.subscription_id = subscription_id;
+	history.package_id = package_id;
+	history.transaction_id = combinedId;
+	history.operator = 'telenor';
+
+	console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
+	this.sendCallBackToIdeation(mid, tid, subscription_id, user.msisdn, price, source).then(async (fulfilled) => {
+		let updated = await subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
+		if(updated){
+			console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
+			history.operator_response = fulfilled;
+			history.billing_status = "Affiliate callback sent";
+			await billingHistoryRepo.createBillingHistory(history);
+		}
+	})
+	.catch(async  (error) => {
+		console.log(`Affiliate - Marketing - Callback - Error - Having TID - ${tid} - MID ${mid}`, error);
+		history.operator_response = error.response.data;
+		history.billing_status = "Affiliate callback error";
+		await billingHistoryRepo.createBillingHistory(history);
+	});
+}
+
+sendCallBackToIdeation = async(mid, tid) =>  {
+
+	if(mid === "aff3a") {
+		return new Promise(function(resolve, reject) {
+			axios({method: 'get', url: 'http://tracking.y2nx.com/postback?cid='+tid})
+			.then(function(response){
+				console.log("aff3a", response.data);
+				resolve(response.data);
+			}).catch(function(err){
+				console.log("aff3a - err", err.message);
+				reject(err);
+			});
+		});
+	}else{
+		var url; 
+		if (mid === "1569") {
+			url = config.ideation_callback_url + `p?mid=${mid}&tid=${tid}`;
+		} else if (mid === "goonj"){
+			url = config.ideation_callback_url2 + `?txid=${tid}`;
+		} else if (mid === "aff3"){
+			url = config.ideation_callback_url3 + `${tid}`;
+		} else if (mid === "affpro"){
+			url = config.ideation_Affpro_callback + `${tid}`;
+		} else if (mid === "1" || mid === "gdn" ){
+			return new Promise((resolve,reject) => { reject(null)})
+		} else if (mid === "affmob") {
+			url = `${config.affmob_callback}?txid=${tid}`;
+		}
+
+		console.log("warning - ", "affiliate url - ", "mid - ", mid, " url - ", url)
+		return new Promise(function(resolve, reject) {
+			axios({
+				method: 'post',
+				url: url,
+				headers: {'Content-Type': 'application/x-www-form-urlencoded' }
+			}).then(function(response){
+				console.log("affpro", response.data);
+				resolve(response.data);
+			}).catch(function(err){
+				console.log("affpro - err", err.message);
+				reject(err);
+			});
+		});
+	}
+}
+
 // new to flows
 exports.subscribeNow = async(req, res) => {
 	
@@ -294,74 +370,82 @@ exports.subscribeNow = async(req, res) => {
 					
 					if(payment_source === 'easypaisa') {
 						chargingResponse = await tpEpCoreRepo.subscribeEp(req.body.otp, user.msisdn, packageObj.price_point_pkr, undefined);
-						console.log("billing response of easypaisa but not billed customer: ", user.msisdn, chargingResponse);
-					}else {
-						// expected responses of processDirectBilling
-						// {"status":"PRE_ACTIVE","activationTime":1675484672,"expireTime":1675537200,"activationChannel":"API","serviceVariant":{"id":99144,"externalId":99144,"name":"GOONJ DAILY"},"purchasePrice":5.97,"product":{"id":67,"name":"THIRD_PARTY_GOONJ","type":"EXTERNAL"},"service":{"id":77,"name":"GOONJ","renewalWindows":[{"from":"05:00","to":"12:00"},{"from":"13:00","to":"16:00"},{"from":"17:00","to":"23:00"}]}}
-						// {"status":"ACTIVE","activationTime":1675403635,"expireTime":1675450800,"activationChannel":"API","serviceVariant":{"id":99144,"externalId":99144,"name":"GOONJ DAILY"},"purchasePrice":5.97,"product":{"id":67,"name":"THIRD_PARTY_GOONJ","type":"EXTERNAL"},"service":{"id":77,"name":"GOONJ","renewalWindows":[{"from":"05:00","to":"12:00"},{"from":"13:00","to":"16:00"},{"from":"17:00","to":"23:00"}]}}
-						// { "requestId":"100157-10201433-1", "errorCode": "500.072.05", "errorMessage": "Exception during Subscribe. Response: Response{status=SUBSCRIPTION_ALREADY_EXISTS, message='null', result=null}"}
-						chargingResponse = await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
-						console.log("first time billing response: ", user.msisdn, chargingResponse);
-					}
-
+						console.log("billing response of easypaisa: ", user.msisdn, chargingResponse);
 					
-					if(chargingResponse && (chargingResponse.response.status === "ACTIVE" || chargingResponse.message === 'success')){
-						let serverDate = new Date();
-						let localDate = helper.setDateWithTimezone(serverDate);
-						let nextBilling = _.clone(localDate);
-						nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
+						if(chargingResponse && chargingResponse.message === 'success'){
+							let serverDate = new Date();
+							let localDate = helper.setDateWithTimezone(serverDate);
+							let nextBilling = _.clone(localDate);
+							nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
 
-						
-						subscriptionObj.last_billing_timestamp = localDate;
-						subscriptionObj.next_billing_timestamp = nextBilling;
-						subscriptionObj.subscription_status = 'billed';
-						subscriptionObj.is_allowed_to_stream = true;
-						subscriptionObj.amount_billed_today = packageObj.price_point_pkr;
+							
+							subscriptionObj.last_billing_timestamp = localDate;
+							subscriptionObj.next_billing_timestamp = nextBilling;
+							subscriptionObj.subscription_status = 'billed';
+							subscriptionObj.is_allowed_to_stream = true;
+							subscriptionObj.amount_billed_today = packageObj.price_point_pkr;
 
-						let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
-						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-						//await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+							let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+							
+							await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+							res.send({code: config.codes.code_success, message: 'User signed-in successfully.', gw_transaction_id: gw_transaction_id});
+							return;
+						}else{
+							let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+							await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
 
-						res.send({code: config.codes.code_success, message: 'User signed-in successfully.', gw_transaction_id: gw_transaction_id});
-						return;
-
-					}else if(chargingResponse && chargingResponse.response && chargingResponse.response.status === "PRE_ACTIVE") {
-						let serverDate = new Date();
-						let localDate = helper.setDateWithTimezone(serverDate);
-						let nextBilling = _.clone(localDate);
-						nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.trial_hours);
-						
-						subscriptionObj.last_billing_timestamp = localDate;
-						subscriptionObj.next_billing_timestamp = nextBilling;
-						subscriptionObj.subscription_status = 'trial';
-						subscriptionObj.is_allowed_to_stream = true;
-						subscriptionObj.should_affiliation_callback_sent = false;
+							res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', gw_transaction_id: gw_transaction_id});
+							return;
+						}
+					
+					}else {
+						subscriptionObj.subscription_status = 'none';
+						subscriptionObj.is_allowed_to_stream = false;
 						subscriptionObj.amount_billed_today = 0;
 
 						let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+						await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
+						console.log('DPDP triggered, now waiting for 3 seconds...', user.msisdn, packageObj.pid);
+
 						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-						//await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
-
-						res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', gw_transaction_id: gw_transaction_id});
-						return;
-
-					}else{
-
+						
 						setTimeout(async() => {
-							let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+							let localSubscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+							if(localSubscription.subscription_status === 'billed') {
 
-							// already exist
-							subscriptionObj.subscription_status = 'trial';
-							subscriptionObj.is_allowed_to_stream = true;
-							subscriptionObj.amount_billed_today = 0;
+								if( localSubscription.affiliate_unique_transaction_id && 
+									localSubscription.affiliate_mid && 
+									localSubscription.is_affiliation_callback_executed === false &&
+									localSubscription.should_affiliation_callback_sent === true){
+									if(localSubscription.affiliate_mid == 'walee' || ((localSubscription.source === "HE" || localSubscription.source === "affiliate_web") && localSubscription.affiliate_mid != "1")) {
+										// Send affiliation callback
+										this.sendAffiliationCallback(
+											localSubscription.affiliate_unique_transaction_id, 
+											localSubscription.affiliate_mid,
+											user,
+											localSubscription._id,
+											packageObj._id,
+											packageObj.paywall_id,
+											packageObj.price_point_pkr,
+											localSubscription.source
+											);
+									}
+								}
 
-							subscription = await subscriptionRepo.createSubscription(subscriptionObj);
-							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-							//await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
 
-							res.send({code: config.codes.code_success, message: 'User signed-in successfully.', gw_transaction_id: gw_transaction_id});
-							return;
-						}, 5000);
+								res.send({code: config.codes.code_success, message: 'Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+								return;
+							}else if(localSubscription.subscription_status === 'trial'){	
+								res.send({code: config.codes.code_trial_activated, message: 'Trial Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+								return;
+							}else{
+								console.log('Failed to sing-in', localSubscription);
+								res.send({code: config.codes.code_error, message: 'Failed To Sign In', gw_transaction_id: gw_transaction_id});
+								return;
+							}
+						}, 3000);
 					}
 				}
 			}else{
