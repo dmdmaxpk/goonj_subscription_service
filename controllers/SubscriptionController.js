@@ -199,7 +199,7 @@ sendAffiliationCallback = async(tid, mid, user, subscription_id, package_id, pay
 	})
 	.catch(async  (error) => {
 		console.log(`Affiliate - Marketing - Callback - Error - Having TID - ${tid} - MID ${mid}`, error);
-		history.operator_response = error.response.data;
+		history.operator_response = error;
 		history.billing_status = "Affiliate callback error";
 		await billingHistoryRepo.createBillingHistory(history);
 	});
@@ -234,20 +234,23 @@ sendCallBackToIdeation = async(mid, tid) =>  {
 			url = `${config.affmob_callback}?txid=${tid}`;
 		}
 
-		console.log("warning - ", "affiliate url - ", "mid - ", mid, " url - ", url)
-		return new Promise(function(resolve, reject) {
-			axios({
-				method: 'post',
-				url: url,
-				headers: {'Content-Type': 'application/x-www-form-urlencoded' }
-			}).then(function(response){
-				console.log("affpro", response.data);
-				resolve(response.data);
-			}).catch(function(err){
-				console.log("affpro - err", err.message);
-				reject(err);
+		if(url) {
+			return new Promise(function(resolve, reject) {
+				axios({
+					method: 'post',
+					url: url,
+					headers: {'Content-Type': 'application/x-www-form-urlencoded' }
+				}).then(function(response){
+					console.log("affpro", response.data);
+					resolve(response.data);
+				}).catch(function(err){
+					console.log("affpro - err", err.message);
+					reject(err);
+				});
 			});
-		});
+		}else{
+			return Promise.reject('URL is empty');
+		}
 	}
 }
 
