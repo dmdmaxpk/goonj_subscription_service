@@ -304,46 +304,56 @@ exports.subscribeNow = async(req, res) => {
 					}else{
 
 						let chargingResponse = undefined;
-
-						if(subscription.payment_source === 'easypaisa') {
-							chargingResponse = await tpEpCoreRepo.subscribeEp(req.body.otp, user.msisdn, packageObj.price_point_pkr, subscription.ep_token);
-							console.log("billing response of easypaisa but not billed customer: ", user.msisdn, chargingResponse);
-						}else {
-							// expected responses of processDirectBilling
-							// {"status":"PRE_ACTIVE","activationTime":1675484672,"expireTime":1675537200,"activationChannel":"API","serviceVariant":{"id":99144,"externalId":99144,"name":"GOONJ DAILY"},"purchasePrice":5.97,"product":{"id":67,"name":"THIRD_PARTY_GOONJ","type":"EXTERNAL"},"service":{"id":77,"name":"GOONJ","renewalWindows":[{"from":"05:00","to":"12:00"},{"from":"13:00","to":"16:00"},{"from":"17:00","to":"23:00"}]}}
-							// {"status":"ACTIVE","activationTime":1675403635,"expireTime":1675450800,"activationChannel":"API","serviceVariant":{"id":99144,"externalId":99144,"name":"GOONJ DAILY"},"purchasePrice":5.97,"product":{"id":67,"name":"THIRD_PARTY_GOONJ","type":"EXTERNAL"},"service":{"id":77,"name":"GOONJ","renewalWindows":[{"from":"05:00","to":"12:00"},{"from":"13:00","to":"16:00"},{"from":"17:00","to":"23:00"}]}}
-							// { "requestId":"100157-10201433-1", "errorCode": "500.072.05", "errorMessage": "Exception during Subscribe. Response: Response{status=SUBSCRIPTION_ALREADY_EXISTS, message='null', result=null}"}
-							chargingResponse = await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
-							console.log("billing response of existing but not billed customer: ", user.msisdn, chargingResponse);
-						}	
-
-						if(chargingResponse && (chargingResponse.response.status === "ACTIVE" || chargingResponse.message === 'success')){
+					
+						if(payment_source === 'easypaisa') {
+							chargingResponse = await tpEpCoreRepo.subscribeEp(req.body.otp, user.msisdn, packageObj.price_point_pkr, undefined);
+							console.log("billing response of easypaisa not billed customer: ", user.msisdn, chargingResponse);
 						
-							let serverDate = new Date();
-							let localDate = helper.setDateWithTimezone(serverDate);
-							let nextBilling = _.clone(localDate);
-							nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
+							if(chargingResponse && chargingResponse.message === 'success'){
+								let serverDate = new Date();
+								let localDate = helper.setDateWithTimezone(serverDate);
+								let nextBilling = _.clone(localDate);
+								nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
 
-							subscription.last_subscription_status = subscription.subscription_status;
-							subscription.last_billing_timestamp = localDate;
-							subscription.next_billing_timestamp = nextBilling;
-							subscription.subscription_status = 'billed';
-							subscription.is_allowed_to_stream = true;
-							subscription.active = true;
-							subscription.amount_billed_today = packageObj.price_point_pkr;
+								
+								subscription.last_billing_timestamp = localDate;
+								subscription.next_billing_timestamp = nextBilling;
+								subscription.subscription_status = 'billed';
+								subscription.is_allowed_to_stream = true;
+								subscription.amount_billed_today = packageObj.price_point_pkr;
 
-							await subscriptionRepo.updateSubscription(subscription._id, subscription);
-							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-							//await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
-
+								await subscriptionRepo.updateSubscription(subscription._id, subscription);
+								await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+								
+								await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+								res.send({code: config.codes.code_success, message: 'User signed-in successfully.', gw_transaction_id: gw_transaction_id});
+								return;
+							}else{
+								res.send({code: config.codes.code_error, message: 'Failed To Sign In', gw_transaction_id: gw_transaction_id});
+								return;
+							}
+						
+						}else {
+							await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
+							console.log('DPDP triggered for existing customer, now waiting for 3 seconds...', user.msisdn, packageObj.pid);
 							
-							res.send({code: config.codes.code_success, message: 'User signed-in successfully', gw_transaction_id: gw_transaction_id});
-						}else{
 							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
-							//await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
-
-							res.send({code: config.codes.code_error, message: 'Failed to subscribe, please try again', gw_transaction_id: gw_transaction_id});
-						}
+						
+							setTimeout(async() => {
+								let localSubscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+								if(localSubscription.subscription_status === 'billed') {
+									res.send({code: config.codes.code_success, message: 'Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+									return;
+								}else if(localSubscription.subscription_status === 'trial'){	
+									res.send({code: config.codes.code_trial_activated, message: 'Trial Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+									return;
+								}else{
+									console.log('Failed to sing-in', localSubscription);
+									res.send({code: config.codes.code_error, message: 'Failed To Sign In', gw_transaction_id: gw_transaction_id});
+									return;
+								}
+							}, 3000);
+							}
 					}
 				}else{
 
