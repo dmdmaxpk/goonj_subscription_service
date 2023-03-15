@@ -187,7 +187,7 @@ sendAffiliationCallback = async(tid, mid, user, subscription_id, package_id, pay
 	history.operator = 'telenor';
 
 	console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
-	this.sendCallBackToIdeation(mid, tid, subscription_id, user.msisdn, price, source).then(async (fulfilled) => {
+	sendCallBackToIdeation(mid, tid, subscription_id, user.msisdn, price, source).then(async (fulfilled) => {
 		let updated = await subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
 		if(updated){
 			console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
