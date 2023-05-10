@@ -1420,6 +1420,12 @@ exports.getSubscriptionByPackageId = async (req, res) => {
 	res.send(result);
 }
 
+exports.getSubscriptionByUserId = async (req, res) => {
+	let postData = req.query;
+	let result = await subscriptionRepo.getSubscriptionByUserId(postData.user_id);
+	res.send(result);
+}
+
 exports.getPackagesOfSubscriber = async (req, res) => {
 	let postData = req.query;
 	let result = await subscriptionRepo.getPackagesOfSubscriber(postData.user_id);
