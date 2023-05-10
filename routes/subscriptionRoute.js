@@ -13,7 +13,7 @@ router.route('/status').post(controller.status);
 router.route('/getAllSubs').get(controller.getAllSubscriptions);
 router.route('/recharge').post(controller.recharge);
 router.route('/get-subscription-by-package-id').get(controller.getSubscriptionByPackageId)
-router.route('/get-subscription-by-user-id').get(controller.getSubscriptionByPackageId)
+router.route('/get-subscription-by-user-id').get(controller.getSubscriptionByUserId)
 router.route('/get-packages-of-subscriber').get(controller.getPackagesOfSubscriber)
 router.route('/mark-double-charged-as-active').get(controller.markDoubleChargedAsActive)
 // router.route('/report').get(controller.report)
