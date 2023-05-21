@@ -40,11 +40,11 @@ var job = new CronJob('0 0 0 * * *', function() {
 job.start();
 
 // Pre-renewal message cron
-var preRenewalJob = new CronJob('0 10 0 * * *', function() {
-    const preRenewalService = require('./services/PreRenewalService');
-    preRenewalService.getPreRenewalSubscriptions();
-}, null, true, 'Asia/Karachi');
-preRenewalJob.start();
+// var preRenewalJob = new CronJob('0 10 0 * * *', function() {
+//     const preRenewalService = require('./services/PreRenewalService');
+//     preRenewalService.getPreRenewalSubscriptions();
+// }, null, true, 'Asia/Karachi');
+// preRenewalJob.start();
 
 // Start Server
 let { port } = config;

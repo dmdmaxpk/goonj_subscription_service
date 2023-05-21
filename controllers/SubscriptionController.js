@@ -9,6 +9,7 @@ const billingHistoryRepo = container.resolve("billingHistoryRepository");
 const tpEpCoreRepo = container.resolve("tpEpCoreRepository");
 const path = require('path');
 const readline = require('readline');
+const axios = require('axios');
 
 const subscriptionService = container.resolve("subscriptionService");
 
@@ -174,42 +175,303 @@ exports.subscribe = async (req, res) => {
 	}
 }
 
-// subscribe for ideation
-exports.subscribeNow = async(req, res) => {
-	let {msisdn, package_id, source, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid, gw_transaction_id} = req.body;
-	source = source ? source : 'ideation';
-	let user = await userRepo.getUserByMsisdn(msisdn);
-	if(!user) {
-		try{
-			await createUser(msisdn, source);
-			user = await userRepo.getUserByMsisdn(msisdn);
-		}catch(e){
-			res.send({code: config.codes.code_error, message: e.message, gw_transaction_id: gw_transaction_id})
-			return;
+sendAffiliationCallback = async(tid, mid, user, subscription_id, package_id, paywall_id, price, source) => {
+	let combinedId = tid + "*" +mid;
+
+	let history = {};
+	history.user_id = user._id;
+	history.msisdn = user.msisdn;
+	history.paywall_id = paywall_id;
+	history.subscription_id = subscription_id;
+	history.package_id = package_id;
+	history.transaction_id = combinedId;
+	history.operator = 'telenor';
+
+	console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
+	sendCallBackToIdeation(mid, tid, subscription_id, user.msisdn, price, source).then(async (fulfilled) => {
+		let updated = await subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
+		if(updated){
+			console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
+			history.operator_response = fulfilled;
+			history.billing_status = "Affiliate callback sent";
+			await billingHistoryRepo.createBillingHistory(history);
+		}
+	})
+	.catch(async  (error) => {
+		console.log(`Affiliate - Marketing - Callback - Error - Having TID - ${tid} - MID ${mid}`, error);
+		history.operator_response = error;
+		history.billing_status = "Affiliate callback error";
+		await billingHistoryRepo.createBillingHistory(history);
+	});
+}
+
+sendCallBackToIdeation = async(mid, tid) =>  {
+
+	if(mid === "aff3a") {
+		return new Promise(function(resolve, reject) {
+			axios({method: 'get', url: 'http://tracking.y2nx.com/postback?cid='+tid})
+			.then(function(response){
+				console.log("aff3a", response.data);
+				resolve(response.data);
+			}).catch(function(err){
+				console.log("aff3a - err", err.message);
+				reject(err);
+			});
+		});
+	}else{
+		var url; 
+		if (mid === "1569") {
+			url = config.ideation_callback_url + `p?mid=${mid}&tid=${tid}`;
+		} else if (mid === "goonj"){
+			url = config.ideation_callback_url2 + `?txid=${tid}`;
+		} else if (mid === "aff3"){
+			url = config.ideation_callback_url3 + `${tid}`;
+		} else if (mid === "affpro"){
+			url = config.ideation_Affpro_callback + `${tid}`;
+		} else if (mid === "1" || mid === "gdn" ){
+			return new Promise((resolve,reject) => { reject(null)})
+		} else if (mid === "affmob") {
+			url = `${config.affmob_callback}?txid=${tid}`;
+		}
+
+		if(url) {
+			return new Promise(function(resolve, reject) {
+				axios({
+					method: 'post',
+					url: url,
+					headers: {'Content-Type': 'application/x-www-form-urlencoded' }
+				}).then(function(response){
+					console.log("affpro", response.data);
+					resolve(response.data);
+				}).catch(function(err){
+					console.log("affpro - err", err.message);
+					reject(err);
+				});
+			});
+		}else{
+			return Promise.reject('URL is empty');
 		}
 	}
+}
 
-	if(user) {
-		let packageObj = await coreRepo.getPackage(package_id);
-		if (packageObj) {
-			let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
-			if(subscription) {
-				res.send({code: config.codes.code_error, message: `The subscriber '${msisdn}' already exists.`, gw_transaction_id: gw_transaction_id});
+// new to flows
+exports.subscribeNow = async(req, res) => {
+	
+	let gw_transaction_id = req.body.gw_transaction_id;
+	let decodedResponse = await coreRepo.getDecoded(req);
+	let decodedUser = decodedResponse.decoded;
+	let headers = req.headers;
+
+	//req.body.package_id = 'QDfC';
+
+	console.log('-----SUBSCRIBE-----', req.body, decodedUser);
+
+	if(decodedUser && decodedUser.msisdn){
+		let {msisdn, package_id, source, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid} = req.body;
+		source = source ? source : 'na';
+
+		let user = await userRepo.getUserByMsisdn(msisdn);
+		if(!user) {
+			try{
+				await createUser(msisdn, source);
+				user = await userRepo.getUserByMsisdn(msisdn);
+			}catch(e){
+				res.send({code: config.codes.code_error, message: e.message, gw_transaction_id: gw_transaction_id})
 				return;
-			}else{
-				try{
-					await subscribeAndCreateSubscription(user, packageObj, payment_source, marketing_source, affiliate_unique_transaction_id, affiliate_mid);
-					res.send({code: config.codes.code_success, message: 'User successfully subscribed!', gw_transaction_id: gw_transaction_id});
-					return;
-				}catch(e){
-					res.send({code: config.codes.code_error, message: e.message, gw_transaction_id: gw_transaction_id})
-					return;
-				}
-				
 			}
 		}
+
+		if(user) {
+			if(user.is_black_listed === true) {
+				console.log(`The user ${user.msisdn} is blacklisted`);
+				res.send({code: config.codes.code_error, message: "The user is blacklisted", gw_transaction_id: gw_transaction_id});
+				return;
+			}
+
+			let packageObj = await coreRepo.getPackage(package_id);
+			if (packageObj) {
+				let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+				if(subscription) {
+					if(subscription.is_black_listed === true) {
+						console.log(`The subscription ${user.msisdn} is blacklisted`);
+						res.send({code: config.codes.code_error, message: "The subscription is blacklisted", gw_transaction_id: gw_transaction_id});
+						return;
+					}
+
+					if(subscription.subscription_status === 'billed' && subscription.is_allowed_to_stream === true) {
+						res.send({code: config.codes.code_success, message: 'Welcome back. You are signed in successfully.', gw_transaction_id: gw_transaction_id});
+						return;
+					}else{
+
+						let chargingResponse = undefined;
+					
+						if(payment_source === 'easypaisa') {
+							chargingResponse = await tpEpCoreRepo.subscribeEp(req.body.otp, user.msisdn, packageObj.price_point_pkr, undefined);
+							console.log("billing response of easypaisa not billed customer: ", user.msisdn, chargingResponse);
+						
+							if(chargingResponse && chargingResponse.message === 'success'){
+								let serverDate = new Date();
+								let localDate = helper.setDateWithTimezone(serverDate);
+								let nextBilling = _.clone(localDate);
+								nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
+
+								
+								subscription.last_billing_timestamp = localDate;
+								subscription.next_billing_timestamp = nextBilling;
+								subscription.subscription_status = 'billed';
+								subscription.is_allowed_to_stream = true;
+								subscription.amount_billed_today = packageObj.price_point_pkr;
+
+								await subscriptionRepo.updateSubscription(subscription._id, subscription);
+								await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+								
+								await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+								res.send({code: config.codes.code_success, message: 'User signed-in successfully.', gw_transaction_id: gw_transaction_id});
+								return;
+							}else{
+								res.send({code: config.codes.code_error, message: 'Failed To Sign In', gw_transaction_id: gw_transaction_id});
+								return;
+							}
+						
+						}else {
+							await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
+							console.log('DPDP triggered for existing customer, now waiting for 3 seconds...', user.msisdn, packageObj.pid);
+							
+							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+						
+							setTimeout(async() => {
+								let localSubscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+								if(localSubscription.subscription_status === 'billed') {
+									res.send({code: config.codes.code_success, message: 'Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+									return;
+								}else if(localSubscription.subscription_status === 'trial'){	
+									res.send({code: config.codes.code_trial_activated, message: 'Trial Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+									return;
+								}else{
+									console.log('Failed to sing-in', localSubscription);
+									res.send({code: config.codes.code_error, message: 'Failed To Sign In', gw_transaction_id: gw_transaction_id});
+									return;
+								}
+							}, 3000);
+							}
+					}
+				}else{
+
+					let subscriptionObj = {};
+					subscriptionObj.user_id = user._id;
+					subscriptionObj.paywall_id = packageObj.paywall_id;
+					subscriptionObj.subscribed_package_id = package_id;
+					subscriptionObj.source = req.body.source ?  req.body.source : 'unknown';
+					subscriptionObj.payment_source = req.body.payment_source ? req.body.payment_source : "telenor";
+					subscriptionObj.user_agent = headers['user-agent'];
+					subscriptionObj.ip_address = headers['x-forwarded-for'];
+					subscriptionObj.active = true;
+
+					if(marketing_source){
+						subscriptionObj.marketing_source = marketing_source;
+					}else{
+						subscriptionObj.marketing_source = 'na';
+					}
+		
+					if(affiliate_unique_transaction_id || affiliate_mid){
+						subscriptionObj.affiliate_unique_transaction_id = affiliate_unique_transaction_id;
+						subscriptionObj.affiliate_mid = affiliate_mid;
+						subscriptionObj.should_affiliation_callback_sent = true;
+					}else{
+						subscriptionObj.should_affiliation_callback_sent = false;
+					}
+					let chargingResponse = undefined;
+					
+					if(payment_source === 'easypaisa') {
+						chargingResponse = await tpEpCoreRepo.subscribeEp(req.body.otp, user.msisdn, packageObj.price_point_pkr, undefined);
+						console.log("billing response of easypaisa: ", user.msisdn, chargingResponse);
+					
+						if(chargingResponse && chargingResponse.message === 'success'){
+							let serverDate = new Date();
+							let localDate = helper.setDateWithTimezone(serverDate);
+							let nextBilling = _.clone(localDate);
+							nextBilling = nextBilling.setHours(nextBilling.getHours() + packageObj.package_duration);
+
+							
+							subscriptionObj.last_billing_timestamp = localDate;
+							subscriptionObj.next_billing_timestamp = nextBilling;
+							subscriptionObj.subscription_status = 'billed';
+							subscriptionObj.is_allowed_to_stream = true;
+							subscriptionObj.amount_billed_today = packageObj.price_point_pkr;
+
+							let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+							
+							await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+							res.send({code: config.codes.code_success, message: 'User signed-in successfully.', gw_transaction_id: gw_transaction_id});
+							return;
+						}else{
+							let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+							await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+							await billingHistoryRepo.assembleBillingHistoryV2(user, subscription, packageObj, chargingResponse.response);
+
+							res.send({code: config.codes.code_trial_activated, message: 'Trial period activated!', gw_transaction_id: gw_transaction_id});
+							return;
+						}
+					
+					}else {
+						subscriptionObj.subscription_status = 'none';
+						subscriptionObj.is_allowed_to_stream = false;
+						subscriptionObj.amount_billed_today = 0;
+
+						let subscription = await subscriptionRepo.createSubscription(subscriptionObj);
+						await tpEpCoreRepo.subscribe(user.msisdn, packageObj.pid);
+						console.log('DPDP triggered, now waiting for 3 seconds...', user.msisdn, packageObj.pid);
+
+						await coreRepo.createViewLog(user._id, subscription._id, subscription.source, subscription.payment_source, subscription.marketing_source);
+						
+						setTimeout(async() => {
+							let localSubscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+							if(localSubscription.subscription_status === 'billed') {
+
+								if( localSubscription.affiliate_unique_transaction_id && 
+									localSubscription.affiliate_mid && 
+									localSubscription.is_affiliation_callback_executed === false &&
+									localSubscription.should_affiliation_callback_sent === true){
+									if(localSubscription.affiliate_mid == 'walee' || ((localSubscription.source === "HE" || localSubscription.source === "affiliate_web") && localSubscription.affiliate_mid != "1")) {
+										// Send affiliation callback
+										sendAffiliationCallback(
+											localSubscription.affiliate_unique_transaction_id, 
+											localSubscription.affiliate_mid,
+											user,
+											localSubscription._id,
+											packageObj._id,
+											packageObj.paywall_id,
+											packageObj.price_point_pkr,
+											localSubscription.source
+											);
+									}
+								}
+
+
+								res.send({code: config.codes.code_success, message: 'Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+								return;
+							}else if(localSubscription.subscription_status === 'trial'){	
+								res.send({code: config.codes.code_trial_activated, message: 'Trial Sign In Successfully.', gw_transaction_id: gw_transaction_id});
+								return;
+							}else{
+								console.log('Failed to sing-in', localSubscription);
+								res.send({code: config.codes.code_error, message: 'Failed To Sign In', gw_transaction_id: gw_transaction_id});
+								return;
+							}
+						}, 3000);
+					}
+				}
+			}else{
+				res.send({code: config.codes.code_error, message: 'Package not found', gw_transaction_id: gw_transaction_id})
+				return;
+			}
+		}else{
+			res.send({code: config.codes.code_error, message: 'Failed to create user.', gw_transaction_id: gw_transaction_id})
+			return;
+		}
 	}else{
-		res.send({code: config.codes.code_error, message: 'Failed to create user.', gw_transaction_id: gw_transaction_id})
+		res.send({code: config.codes.code_error, message: 'Decoded data not found.', gw_transaction_id: gw_transaction_id})
 		return;
 	}
 }
@@ -841,11 +1103,11 @@ exports.status = async (req, res) => {
 	} else {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
-	//console.log("user", user);
+	
 	if(user){
 			let result;
 			if(package_id){
-				result = await subscriptionRepo.getSubscriptionByPackageId(user._id, package_id);
+				result = await subscriptionRepo.getSubscriptionByUserId(user._id);
 			}
 			
 			if(result){
@@ -936,7 +1198,6 @@ exports.unsubscribe = async (req, res) => {
 	let msisdn = req.body.msisdn;
 	let user_id = req.body.user_id;
 	let source = req.body.source;
-	let package_id = req.body.package_id;
 
 	if (user_id) {
 		user = await userRepo.getUserById(user_id);
@@ -944,88 +1205,71 @@ exports.unsubscribe = async (req, res) => {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 	if(user){
-			let subscriptions = [];
-			if(package_id){
-				let subscription = await subscriptionRepo.getSubscriptionByPackageId(user._id, package_id);
-				subscriptions.push(subscription);
-			}else{
-				subscriptions = await subscriptionRepo.getAllSubscriptions(user._id);
+		let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+		let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
+		if(subscription) {
+			//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
+			//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
+			if(subscription.subscription_status === 'expired') {
+				res.send({code: config.codes.code_success, message: 'Already unsubscribed', gw_transaction_id: gw_transaction_id});
+				return;
 			}
+			
+			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
+			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
+			console.log('Unsub TP Response', tpResponse);
 
-			let unSubCount = 0;
-
-			if(subscriptions.length > 0){
-				for(let i = 0; i < subscriptions.length; i++){
-					let subscription = subscriptions[i];
-
-					let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
-					let result = await subscriptionRepo.updateSubscription(subscription._id, 
-					{
-						auto_renewal: false, 
-						consecutive_successive_bill_counts: 0,
-						is_allowed_to_stream: false,
-						is_billable_in_this_cycle: false,
-						queued: false,
-						try_micro_charge_in_next_cycle: false,
-						micro_price_point: 0,
-						last_subscription_status: subscription.subscription_status,
-						subscription_status: "expired",
-						priority: 0,
-						amount_billed_today: 0
-					});
-					
-					let history = {};
-					history.user_id = user._id;
-					history.msisdn = user.msisdn;
-					history.paywall_id = packageObj.paywall_id;
-					history.package_id = packageObj._id;
-					history.subscription_id = subscription._id;
-					history.billing_status = 'unsubscribe-request-received-and-expired';
-					history.source = source ? source : subscription.source;
-					history.operator = user.operator;
-					result = await billingHistoryRepo.createBillingHistory(history);
-					
-					unSubCount += 1;
-					// if(subscription.marketing_source && subscription.marketing_source !== 'none'){
-						
-					// 	// This user registered from a marketer, let's put this user in gray list
-					// 	result = await subscriptionRepo.updateSubscription(subscription._id, {is_gray_listed: true});
-					// 	result = await userRepo.updateUser(msisdn, {is_gray_listed: true});
-					// 	if(result){
-					// 		unSubCount += 1;
-					// 	}
-					// }else{
-					// 	unSubCount += 1;
-					// }
-				}
-
-				if(unSubCount === subscriptions.length){
-					// send sms
-					let smsText;
-					if(package_id == 'QDfG'){
-						smsText = `Apki Goonj TV per Live TV Weekly ki subscription khatm kr di gai ha. Phr se subscribe krne k lye link par click karen https://www.goonj.pk`;
-					}
-					else if(package_id == 'QDfC'){
-						smsText = `Moaziz saarif, ap ki Goonj Daily ki service khatam kar de gae hai. Dobara Rs.5+tax/day subscribe krny k liye link per click karain https://www.goonj.pk`
-					}
-					else{
-						smsText = `Moaziz saarif, ap ki Goonj ki service khatam kar de gae hai. Dobara subscribe krny k liye link per click karain https://www.goonj.pk`
-					}
-					console.log("text", smsText)
-
-					messageRepo.sendMessageDirectly(smsText,user.msisdn);
-
-					res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
-				}else{
-					res.send({code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id});	
-				}
+			//if(tpResponse.response.message === "SUCCESS") {
+			if(tpResponse) {
+				await subscriptionRepo.updateSubscription(subscription._id, 
+				{
+					auto_renewal: false, 
+					consecutive_successive_bill_counts: 0,
+					is_allowed_to_stream: false,
+					is_billable_in_this_cycle: false,
+					queued: false,
+					try_micro_charge_in_next_cycle: false,
+					micro_price_point: 0,
+					last_subscription_status: subscription.subscription_status,
+					subscription_status: "expired",
+					priority: 0,
+					amount_billed_today: 0
+				});
+				
+				let history = {};
+				history.user_id = user._id;
+				history.msisdn = user.msisdn;
+				history.package_id = subscription.subscribed_package_id;
+				history.subscription_id = subscription._id;
+				history.billing_status = 'unsubscribe-request-received-and-expired';
+				history.source = source ? source : subscription.source;
+				history.operator = user.operator;
+				history.operator_response = tpResponse.response;
+				await billingHistoryRepo.createBillingHistory(history);
+				res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
 			}else{
-				res.send({code: config.codes.code_error, message: 'No subscription found!', gw_transaction_id: gw_transaction_id});	
+				let history = {};
+				history.user_id = user._id;
+				history.msisdn = user.msisdn;
+				history.package_id = subscription.subscribed_package_id;
+				history.subscription_id = subscription._id;
+				history.billing_status = 'unsubscribe-request-received-and-failed';
+				history.source = source ? source : subscription.source;
+				history.operator = user.operator;
+				history.operator_response = tpResponse.response;
+				await billingHistoryRepo.createBillingHistory(history);
+
+				res.send({code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id});	
 			}
+			
+ 		}else{
+			res.send({code: config.codes.code_error, message: 'No subscription found!', gw_transaction_id: gw_transaction_id});	
+		}
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid user/msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
 }
+
 
 exports.ccd_unsubscribe = async(req, res) => {
 	try{
@@ -1173,6 +1417,12 @@ exports.expire = async (req, res) => {
 exports.getSubscriptionByPackageId = async (req, res) => {
 	let postData = req.query;
 	let result = await subscriptionRepo.getSubscriptionByPackageId(postData.user_id, postData.package_id);
+	res.send(result);
+}
+
+exports.getSubscriptionByUserId = async (req, res) => {
+	let postData = req.query;
+	let result = await subscriptionRepo.getSubscriptionByUserId(postData.user_id);
 	res.send(result);
 }
 

@@ -64,6 +64,36 @@ class TpEpCoreRepository{
             return err
         })
     }
+
+    async subscribe(msisdn, serviceId){
+        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/subscribe`, {msisdn, serviceId})
+        .then(async(res) =>{ 
+            return res.data;
+        }).catch(err =>{
+            return err
+        })
+    }
+
+    async unsubscribe(msisdn, serviceId){
+        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/unsubscribe`, {msisdn, serviceId})
+        .then(async(res) =>{ 
+            return res.data;
+        }).catch(err =>{
+            return err
+        })
+    }
+
+    async subscribeEp(otp, msisdn, amount, ep_token) {
+        let transaction_id = msisdn + '_' + nanoid(8);
+        //mendatory parameters => msisdn && amount && transaction_id && partner_id && payment_source
+        return await Axios.post(`${config.servicesUrls.tp_ep_core_service}/core/charge`, {otp, msisdn, payment_source: 'easypaisa', amount, transaction_id, ep_token, partner_id: 'null'})
+        .then(async(res) =>{ 
+            return res.data;
+        }).catch(err =>{
+            return err
+        })
+    }
+
 }
 
 module.exports = TpEpCoreRepository;
