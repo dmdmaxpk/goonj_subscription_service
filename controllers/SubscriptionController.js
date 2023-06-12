@@ -1233,7 +1233,7 @@ expireByUser = async(user, gw_transaction_id, source) => {
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, allPackages[i].pid);
 			console.log('Unsub TP Response', tpResponse);
 
-			if(tpResponse) {
+			if(tpResponse.response.message === "SUCCESS") {
 				await subscriptionRepo.updateSubscription(subscription._id, 
 				{
 					auto_renewal: false, 
@@ -1268,6 +1268,7 @@ expireByUser = async(user, gw_transaction_id, source) => {
 				history.billing_status = 'unsubscribe-request-received-and-failed';
 				history.source = source ? source : subscription.source;
 				history.operator = user.operator;
+				history.operator_response = tpResponse.response
 				await billingHistoryRepo.createBillingHistory(history);
 
 				// return {code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id};
