@@ -1204,70 +1204,75 @@ exports.unsubscribe = async (req, res) => {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 	if(user){
-		let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
-		let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
-		if(subscription) {
-			//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
-			//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
-			let allPackages = await coreRepo.getAllPackages();
-			console.log('All packages: ', allPackages);
-			
-			if(subscription.subscription_status === 'expired') {
-				res.send({code: config.codes.code_success, message: 'Already unsubscribed', gw_transaction_id: gw_transaction_id});
-				return;
-			}
-
-			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
-			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
-			console.log('Unsub TP Response', tpResponse);
-
-			//if(tpResponse.response.message === "SUCCESS") {
-			if(tpResponse) {
-				await subscriptionRepo.updateSubscription(subscription._id, 
-				{
-					auto_renewal: false, 
-					consecutive_successive_bill_counts: 0,
-					is_allowed_to_stream: false,
-					is_billable_in_this_cycle: false,
-					queued: false,
-					try_micro_charge_in_next_cycle: false,
-					micro_price_point: 0,
-					last_subscription_status: subscription.subscription_status,
-					subscription_status: "expired",
-					priority: 0,
-					amount_billed_today: 0
-				});
-				
-				let history = {};
-				history.user_id = user._id;
-				history.msisdn = user.msisdn;
-				history.package_id = subscription.subscribed_package_id;
-				history.subscription_id = subscription._id;
-				history.billing_status = 'unsubscribe-request-received-and-expired';
-				history.source = source ? source : subscription.source;
-				history.operator = user.operator;
-				history.operator_response = tpResponse.response;
-				await billingHistoryRepo.createBillingHistory(history);
-				res.send({code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id});
-			}else{
-				let history = {};
-				history.user_id = user._id;
-				history.msisdn = user.msisdn;
-				history.package_id = subscription.subscribed_package_id;
-				history.subscription_id = subscription._id;
-				history.billing_status = 'unsubscribe-request-received-and-failed';
-				history.source = source ? source : subscription.source;
-				history.operator = user.operator;
-				await billingHistoryRepo.createBillingHistory(history);
-
-				res.send({code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id});	
-			}
-			
- 		}else{
-			res.send({code: config.codes.code_error, message: 'No subscription found!', gw_transaction_id: gw_transaction_id});	
-		}
+		res.send(await this.expireByUser(user, gw_transaction_id, source));
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid user/msisdn provided.', gw_transaction_id: gw_transaction_id});
+	}
+}
+
+expireByUser = async(user, gw_transaction_id, source) => {
+	if(!user) return;
+
+	let subscription = await subscriptionRepo.getSubscriptionByUserId(user._id);
+	let packageObj = await coreRepo.getPackage(subscription.subscribed_package_id);
+	if(subscription) {
+		//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
+		//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
+		let allPackages = await coreRepo.getAllPackages();
+		console.log('All packages: ', allPackages);
+		
+		if(subscription.subscription_status === 'expired') {
+			return {code: config.codes.code_success, message: 'Already unsubscribed', gw_transaction_id: gw_transaction_id}
+		}
+
+		console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
+		let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
+		console.log('Unsub TP Response', tpResponse);
+
+		//if(tpResponse.response.message === "SUCCESS") {
+		if(tpResponse) {
+			await subscriptionRepo.updateSubscription(subscription._id, 
+			{
+				auto_renewal: false, 
+				consecutive_successive_bill_counts: 0,
+				is_allowed_to_stream: false,
+				is_billable_in_this_cycle: false,
+				queued: false,
+				try_micro_charge_in_next_cycle: false,
+				micro_price_point: 0,
+				last_subscription_status: subscription.subscription_status,
+				subscription_status: "expired",
+				priority: 0,
+				amount_billed_today: 0
+			});
+			
+			let history = {};
+			history.user_id = user._id;
+			history.msisdn = user.msisdn;
+			history.package_id = subscription.subscribed_package_id;
+			history.subscription_id = subscription._id;
+			history.billing_status = 'unsubscribe-request-received-and-expired';
+			history.source = source ? source : subscription.source;
+			history.operator = user.operator;
+			history.operator_response = tpResponse.response;
+			await billingHistoryRepo.createBillingHistory(history);
+			
+			return {code: config.codes.code_success, message: 'Successfully unsubscribed', gw_transaction_id: gw_transaction_id};
+		}else{
+			let history = {};
+			history.user_id = user._id;
+			history.msisdn = user.msisdn;
+			history.package_id = subscription.subscribed_package_id;
+			history.subscription_id = subscription._id;
+			history.billing_status = 'unsubscribe-request-received-and-failed';
+			history.source = source ? source : subscription.source;
+			history.operator = user.operator;
+			await billingHistoryRepo.createBillingHistory(history);
+
+			return {code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id};
+		}
+	}else{
+		return {code: config.codes.code_error, message: 'Subscription not found', gw_transaction_id: gw_transaction_id}
 	}
 }
 
