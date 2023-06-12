@@ -1219,7 +1219,7 @@ expireByUser = async(user, gw_transaction_id, source) => {
 		//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
 		//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
 		let allPackages = await coreRepo.getAllPackages();
-		allPackages = allPackages.fulter((aPkg) => {
+		allPackages = allPackages.filter((aPkg) => {
 			return aPkg.pid !== undefined;
 		})
 		console.log('All valid packages: ', allPackages);
