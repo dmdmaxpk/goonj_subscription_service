@@ -1204,7 +1204,7 @@ exports.unsubscribe = async (req, res) => {
 		user = await userRepo.getUserByMsisdn(msisdn);
 	}
 	if(user){
-		res.send(await this.expireByUser(user, gw_transaction_id, source));
+		res.send(await expireByUser(user, gw_transaction_id, source));
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid user/msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
