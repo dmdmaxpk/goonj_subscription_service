@@ -1215,7 +1215,7 @@ exports.unsubscribe = async (req, res) => {
 			}
 			
 			let allPackages = await coreRepo.getAllPackages();
-			console.log(allPackages);
+			console.log('All packages: ', allPackages);
 
 			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
