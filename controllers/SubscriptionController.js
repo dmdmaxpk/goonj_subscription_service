@@ -10,7 +10,7 @@ const tpEpCoreRepo = container.resolve("tpEpCoreRepository");
 const path = require('path');
 const readline = require('readline');
 const axios = require('axios');
-
+const packageRepo = container.resolve('packageRepository');
 const subscriptionService = container.resolve("subscriptionService");
 
 const constants = container.resolve("constants");
@@ -298,7 +298,7 @@ exports.subscribeNow = async(req, res) => {
 						return;
 					}
 
-					if(subscription.subscription_status === 'billed' && subscription.is_allowed_to_stream === true) {
+					if(subscription.subscription_status === 'billed') {
 						res.send({code: config.codes.code_success, message: 'Welcome back. You are signed in successfully.', gw_transaction_id: gw_transaction_id});
 						return;
 					}else{
@@ -1215,6 +1215,9 @@ exports.unsubscribe = async (req, res) => {
 				return;
 			}
 			
+			let allPackages = await packageRepo.getAllPackages();
+			console.log(allPackages);
+			
 			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
 			console.log('Unsub TP Response', tpResponse);
@@ -1256,7 +1259,6 @@ exports.unsubscribe = async (req, res) => {
 				history.billing_status = 'unsubscribe-request-received-and-failed';
 				history.source = source ? source : subscription.source;
 				history.operator = user.operator;
-				history.operator_response = tpResponse.response;
 				await billingHistoryRepo.createBillingHistory(history);
 
 				res.send({code: config.codes.code_error, message: 'Failed to unsubscribe', gw_transaction_id: gw_transaction_id});	

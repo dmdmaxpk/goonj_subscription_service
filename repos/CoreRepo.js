@@ -25,6 +25,18 @@ class CoreRepository{
         })
     }
 
+    async getAllPackages(){
+        // need to remove the slug check and add a proper way for it
+        return await Axios.get(`${config.servicesUrls.core_service}/package`)
+        .then(res =>{ 
+            let result = res.data;
+            return result
+        })
+        .catch(err =>{
+            return err
+        })
+    }
+
     async getPaywallsBySlug(slug){
         return await Axios.get(`${config.servicesUrls.core_service}/paywall?slug=${slug}`)
         .then(res =>{ 
