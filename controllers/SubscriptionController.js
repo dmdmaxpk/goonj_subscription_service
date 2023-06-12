@@ -1209,13 +1209,13 @@ exports.unsubscribe = async (req, res) => {
 		if(subscription) {
 			//{"code":0,"response_time":"600","response":{"requestId": "74803-26204131-1", "message": "SUCCESS"}}
 			//{"code":0,"response_time":"600","response":{"requestId":"7244-22712370-1","errorCode":"500.072.05","errorMessage":"Exception during Unsubscribe. Response: Response{status=SUBSCRIPTION_IS_ALREADY_INACTIVE, message='null', result=null}"}}
+			let allPackages = await coreRepo.getAllPackages();
+			console.log('All packages: ', allPackages);
+			
 			if(subscription.subscription_status === 'expired') {
 				res.send({code: config.codes.code_success, message: 'Already unsubscribed', gw_transaction_id: gw_transaction_id});
 				return;
 			}
-			
-			let allPackages = await coreRepo.getAllPackages();
-			console.log('All packages: ', allPackages);
 
 			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
