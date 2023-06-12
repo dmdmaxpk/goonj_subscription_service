@@ -1222,7 +1222,6 @@ expireByUser = async(user, gw_transaction_id, source) => {
 		allPackages = allPackages.filter((aPkg) => {
 			return aPkg.pid !== undefined;
 		})
-		console.log('All valid packages: ', allPackages);
 		
 		if(subscription.subscription_status === 'expired') {
 			return {code: config.codes.code_success, message: 'Already unsubscribed', gw_transaction_id: gw_transaction_id}
