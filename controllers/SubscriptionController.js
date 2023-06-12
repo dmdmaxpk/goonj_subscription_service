@@ -10,7 +10,6 @@ const tpEpCoreRepo = container.resolve("tpEpCoreRepository");
 const path = require('path');
 const readline = require('readline');
 const axios = require('axios');
-const packageRepo = container.resolve('packageRepository');
 const subscriptionService = container.resolve("subscriptionService");
 
 const constants = container.resolve("constants");
@@ -1215,9 +1214,9 @@ exports.unsubscribe = async (req, res) => {
 				return;
 			}
 			
-			let allPackages = await packageRepo.getAllPackages();
+			let allPackages = await coreRepo.getAllPackages();
 			console.log(allPackages);
-			
+
 			console.log('Payload to TP Unsub: ', user.msisdn, packageObj.pid);
 			let tpResponse = await tpEpCoreRepo.unsubscribe(user.msisdn, packageObj.pid);
 			console.log('Unsub TP Response', tpResponse);
