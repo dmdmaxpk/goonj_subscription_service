@@ -3,6 +3,7 @@ const container = awilix.createContainer({
     injectionMode: awilix.InjectionMode.PROXY
 });
 // Repositories
+const CampaignsRepository = require('../repos/CampaignRepo');
 const SubscriptionRepository = require('../repos/SubscriptionRepo');
 const BillingHistoryRepo = require('../repos/BillingHistoryRepo');
 const CoreRepo = require('../repos/CoreRepo');
@@ -21,6 +22,7 @@ const Constants = require('./constants');
 container.register({
     // Here we are telling Awilix how to resolve 
     // Repositories 
+    campaignRepository: awilix.asClass(CampaignsRepository),
     subscriptionRepository: awilix.asClass(SubscriptionRepository).singleton(),
     billingHistoryRepository: awilix.asClass(BillingHistoryRepo).singleton(),
     coreRepository: awilix.asClass(CoreRepo).singleton(),

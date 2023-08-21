@@ -1,6 +1,7 @@
 const config = require('../config');
 const container = require('../configurations/container');
 
+const campaignRepo = container.resolve("campaignRepository");
 const subscriptionRepo = container.resolve("subscriptionRepository");
 const coreRepo = container.resolve("coreRepository");
 const messageRepo = container.resolve("messageRepository");
@@ -1187,6 +1188,23 @@ exports.getAllSubscriptions = async (req, res) => {
 	}else{
 		res.send({code: config.codes.code_error, message: 'Invalid msisdn provided.', gw_transaction_id: gw_transaction_id});
 	}
+}
+
+exports.campaign = async (req, res) => {
+	let gw_transaction_id = req.body.gw_transaction_id;
+	let data = {
+		msisdn: req.body.msisdn,
+		service_id: req.body.serviceId,
+		package_id: req.body.package_id,
+		source: req.body.source,
+		marketing_source: req.body.marketing_source,
+		affiliate_tid: req.body.affiliate_unique_transaction_id,
+		affiliate_mid: req.body.affiliate_mid,
+		payment_source: req.body.payment_source
+	};
+
+	let result = await campaignRepo.create(data);
+	res.send({code: config.code_success, result, gw_transaction_id});
 }
 
 // UnSubscribe

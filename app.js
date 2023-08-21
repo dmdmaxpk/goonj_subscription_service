@@ -10,6 +10,7 @@ const app = express();
 require('./models/Subscription');
 require('./models/WaleeLogs');
 require('./models/WaleeApiLogs');
+require('./models/Campaign');
 
 // Connection to Database
 mongoose.connect(config.mongo_connection_url, {useUnifiedTopology: true, useCreateIndex: true, useNewUrlParser: true, useFindAndModify: false});
