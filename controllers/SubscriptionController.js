@@ -1204,7 +1204,7 @@ exports.campaigns = async (req, res) => {
 	};
 
 	let result = await campaignRepo.create(data);
-	res.send({code: config.code_success, result, gw_transaction_id});
+	res.send({code: config.codes.code_success, result, gw_transaction_id});
 }
 
 // UnSubscribe
