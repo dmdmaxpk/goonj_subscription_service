@@ -73,7 +73,8 @@ class BillingService{
                     this.sendAffiliationCallback(
                         updatedSubscription.affiliate_unique_transaction_id, 
                         updatedSubscription.affiliate_mid,
-                        user,
+                        user.msisdn,
+                        user._id,
                         updatedSubscription._id,
                         packageObj._id,
                         packageObj.paywall_id,
@@ -150,20 +151,19 @@ class BillingService{
         await this.billingHistoryRepository.createBillingHistory(history);
     }
 
-    async sendAffiliationCallback(tid, mid, user, subscription_id, package_id, paywall_id, price, source) {
+    async sendAffiliationCallback(tid, mid, msisdn, user_id, subscription_id, package_id) {
         let combinedId = tid + "*" +mid;
 
         let history = {};
-        history.user_id = user._id;
-        history.msisdn = user.msisdn;
-        history.paywall_id = paywall_id;
+        history.user_id = user_id;
+        history.msisdn = msisdn;
         history.subscription_id = subscription_id;
         history.package_id = package_id;
         history.transaction_id = combinedId;
         history.operator = 'telenor';
 
         console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
-        this.sendCallBackToIdeation(mid, tid, subscription_id, user.msisdn, price, source).then(async (fulfilled) => {
+        this.sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
             let updated = await this.subscriptionRepository.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
             if(updated){
                 console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);

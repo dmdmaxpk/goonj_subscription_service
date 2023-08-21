@@ -18,7 +18,6 @@ const fs = require('fs');
 
 const helper = require('../helper/helper');
 const  _ = require('lodash');
-const { use } = require('../routes');
 
 exports.getSubscriptionDetails = async(req, res) => {
 	let { msisdn, transaction_id } = req.query;
@@ -175,20 +174,19 @@ exports.subscribe = async (req, res) => {
 	}
 }
 
-sendAffiliationCallback = async(tid, mid, user, subscription_id, package_id, paywall_id, price, source) => {
+sendAffiliationCallback = async(tid, mid, msisdn, user_id, subscription_id, package_id) => {
 	let combinedId = tid + "*" +mid;
 
 	let history = {};
-	history.user_id = user._id;
-	history.msisdn = user.msisdn;
-	history.paywall_id = paywall_id;
+	history.user_id = user_id;
+	history.msisdn = msisdn
 	history.subscription_id = subscription_id;
 	history.package_id = package_id;
 	history.transaction_id = combinedId;
 	history.operator = 'telenor';
 
 	console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
-	sendCallBackToIdeation(mid, tid, subscription_id, user.msisdn, price, source).then(async (fulfilled) => {
+	sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
 		let updated = await subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
 		if(updated){
 			console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
@@ -252,6 +250,18 @@ sendCallBackToIdeation = async(mid, tid) =>  {
 			return Promise.reject('URL is empty');
 		}
 	}
+}
+
+exports.sendCallback = async(req, res) => {
+	let {tid, mid, msisdn, user_id, subscription_id, package_id} = req.data;
+	try{
+		sendAffiliationCallback(tid, mid, msisdn, user_id, subscription_id, package_id);
+		res.send('Success');
+	}catch(err){
+		console.log(err);
+		res.send('Fail')
+	}
+	
 }
 
 // new to flows
@@ -438,7 +448,8 @@ exports.subscribeNow = async(req, res) => {
 										sendAffiliationCallback(
 											localSubscription.affiliate_unique_transaction_id, 
 											localSubscription.affiliate_mid,
-											user,
+											user.msisdn,
+											user._id,
 											localSubscription._id,
 											packageObj._id,
 											packageObj.paywall_id,
