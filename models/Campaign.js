@@ -9,9 +9,10 @@ const campaignSchema = new Schema({
     package_id: {type: String, index: true},
     source: {type: String},
     marketing_source: { type: String, default: 'none' },
-    affiliate_tid: {type:String},
-    affiliate_mid: {type:String, index: true},
+    affiliate_tid: {type: String},
+    affiliate_mid: {type: String, index: true},
     payment_source: { type: String, default: "telenor" },
+    is_callback_executed: {type: Boolean, default: false, index: true},
     added_dtm: { type: Date, default: Date.now, index: true }
 }, { strict: true });
 

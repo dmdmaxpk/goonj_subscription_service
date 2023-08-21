@@ -15,6 +15,10 @@ class CampaignRepository {
         }
     }
 
+    async updateRecord (msisdn, record) {
+        await Campaign.findOneAndUpdate({msisdn: msisdn}, record, {new: true, useFindAndModify: false});
+    }
+
     setDateWithTimezone(date){
         return new Date(date.toLocaleString("en-US", {timeZone: "Asia/Karachi"}));
     }

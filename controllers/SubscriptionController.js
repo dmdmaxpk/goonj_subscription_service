@@ -188,6 +188,7 @@ sendAffiliationCallback = async(tid, mid, msisdn, user_id, subscription_id, pack
 	console.log(`Sending Affiliate Marketing Callback Having TID - ${tid} - MID ${mid}`);
 	sendCallBackToIdeation(mid, tid).then(async (fulfilled) => {
 		let updated = await subscriptionRepo.updateSubscription(subscription_id, {is_affiliation_callback_executed: true});
+		await campaignRepo.updateRecord(msisdn, {is_callback_executed: true});
 		if(updated){
 			console.log(`Successfully Sent Affiliate Marketing Callback Having TID - ${tid} - MID ${mid} - Ideation Response - ${fulfilled}`);
 			history.operator_response = fulfilled;
