@@ -1203,8 +1203,8 @@ exports.campaigns = async (req, res) => {
 		payment_source: req.body.payment_source
 	};
 
-	let result = await campaignRepo.create(data);
-	res.send({code: config.codes.code_success, result, gw_transaction_id});
+	let status = await campaignRepo.create(data);
+	res.send({code: config.codes.code_success, status, gw_transaction_id});
 }
 
 // UnSubscribe
