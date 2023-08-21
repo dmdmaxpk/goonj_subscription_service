@@ -253,7 +253,7 @@ sendCallBackToIdeation = async(mid, tid) =>  {
 }
 
 exports.sendCallback = async(req, res) => {
-	let {tid, mid, msisdn, user_id, subscription_id, package_id} = req.data;
+	let {tid, mid, msisdn, user_id, subscription_id, package_id} = req.body;
 	try{
 		sendAffiliationCallback(tid, mid, msisdn, user_id, subscription_id, package_id);
 		res.send('Success');
