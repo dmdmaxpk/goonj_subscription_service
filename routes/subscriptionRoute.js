@@ -4,7 +4,7 @@ const controller = require('../controllers/SubscriptionController');
 
 router.route('/affiliate-subscriptions-count').get(controller.count_affiliate_subscriptions);
 router.route('/subscribe').post(controller.subscribe);
-router.route('/campaign').post(controller.campaign);
+router.route('/campaigns').post(controller.campaigns);
 router.route('/subscribeNow').post(controller.subscribeNow);
 router.route('/checkStatus').post(controller.checkStatus);
 router.route('/unsubscribe').post(controller.unsubscribe);

@@ -1190,7 +1190,7 @@ exports.getAllSubscriptions = async (req, res) => {
 	}
 }
 
-exports.campaign = async (req, res) => {
+exports.campaigns = async (req, res) => {
 	let gw_transaction_id = req.body.gw_transaction_id;
 	let data = {
 		msisdn: req.body.msisdn,
