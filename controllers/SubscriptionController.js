@@ -1423,8 +1423,9 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	let today = new Date();
 	today.setHours(0, 0, 0, 0);
 
-	let yesterday = new Date(today);
-	yesterday = yesterday.setDate(yesterday.getDate() - 1);
+	let yesterday = new Date();
+	yesterday.setHours(0, 0, 0, 0);
+	yesterday.setDate(yesterday.getDate() - 1);
 	
 	console.log(mid, yesterday, today);
 
@@ -1437,11 +1438,13 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 			yesterday: yesterdayCallbackCount && yesterdayCallbackCount[0] ? yesterdayCallbackCount[0].sum : 0,
 			today: callbackCount && callbackCount[0] ? callbackCount[0].sum : 0
 		},
-		Subscriptions: {
-			Expired: getCountById(subscriptions, "expired"),
+		Subscriptions: subscriptions
+
+		/**
+		 * Expired: getCountById(subscriptions, "expired"),
 			Billed: getCountById(subscriptions, "billed"),
 			Trial: getCountById(subscriptions, "trial")
-		}
+		 */
 	}
 
 	console.log(response);
