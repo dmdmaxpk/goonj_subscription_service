@@ -1430,18 +1430,26 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	console.log(mid, yesterday, today);
 
 	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
-	let callbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, today);
+	let yesterdaySubscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, yesterday, today);
 
+	let callbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, today);
 	let yesterdayCallbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, yesterday, today);
 	const response = {
 		CallbackCount: {
-			yesterday: yesterdayCallbackCount && yesterdayCallbackCount[0] ? yesterdayCallbackCount[0].sum : 0,
-			today: callbackCount && callbackCount[0] ? callbackCount[0].sum : 0
+			Yesterday: yesterdayCallbackCount && yesterdayCallbackCount[0] ? yesterdayCallbackCount[0].sum : 0,
+			Today: callbackCount && callbackCount[0] ? callbackCount[0].sum : 0
 		},
 		Subscriptions: {
-			Expired: getCountById(subscriptions, "expired"),
-			Billed: getCountById(subscriptions, "billed"),
-			Trial: getCountById(subscriptions, "trial")
+			Yesterday: {
+				Expired: getCountById(yesterdaySubscriptions, "expired"),
+				Billed: getCountById(yesterdaySubscriptions, "billed"),
+				Trial: getCountById(yesterdaySubscriptions, "trial")
+			},
+			Today: {
+				Expired: getCountById(subscriptions, "expired"),
+				Billed: getCountById(subscriptions, "billed"),
+				Trial: getCountById(subscriptions, "trial")
+			}
 		}
 	}
 
