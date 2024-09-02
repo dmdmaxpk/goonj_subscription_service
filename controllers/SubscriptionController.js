@@ -1438,13 +1438,11 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 			yesterday: yesterdayCallbackCount && yesterdayCallbackCount[0] ? yesterdayCallbackCount[0].sum : 0,
 			today: callbackCount && callbackCount[0] ? callbackCount[0].sum : 0
 		},
-		Subscriptions: subscriptions
-
-		/**
-		 * Expired: getCountById(subscriptions, "expired"),
+		Subscriptions: {
+			Expired: getCountById(subscriptions, "expired"),
 			Billed: getCountById(subscriptions, "billed"),
 			Trial: getCountById(subscriptions, "trial")
-		 */
+		}
 	}
 
 	console.log(response);
@@ -1453,7 +1451,7 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 
 function getCountById(array, id) {
 	const subscription = array.find(sub => sub._id === id);
-	return subscription ? subscription.count : null; // Return count or null if not found
+	return subscription ? subscription.count : 0;
   }
 
 exports.report = async(req, res) => {
