@@ -1419,12 +1419,29 @@ exports.markDoubleChargedAsActive = async (req, res) => {
 
 exports.count_affiliate_subscriptions = async(req, res) => {
 	let {mid} = req.query;
+	
 	let today = new Date();
 	today.setHours(0, 0, 0, 0);
 
-	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
-	res.status(200).send(subscriptions);
+	let yesterday = today;
+	yesterday = yesterday.setDate(yesterday.getDate() - 1);
+	
+	console.log(mid, yesterday, today);
 
+	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
+	let callbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, today);
+
+	let yesterdayCallbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, yesterday, today);
+	const response = {
+		CallbackCount: {
+			yesterday: yesterdayCallbackCount,
+			today: callbackCount
+		},
+		Subscriptions: subscriptions
+	}
+
+	console.log(response);
+	res.status(200).send(response);
 }
 
 exports.report = async(req, res) => {

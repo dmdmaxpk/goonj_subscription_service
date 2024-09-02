@@ -45,6 +45,36 @@ class SubscriptionRepository {
         }
     }
 
+    async getAffiliateCallbackCount(mid, from, to) {
+        if(to == undefined) {
+            return await Subscription.aggregate([
+                {
+                    $match:{
+                        "affiliate_mid": mid,
+                        "is_affiliation_callback_executed": true,
+                        added_dtm:{$gte: new Date(from)}
+                    }
+                },{
+                    $count: "sum"
+                }
+            ])
+        }
+        return await Subscription.aggregate([
+            {
+                $match:{
+                    "affiliate_mid": mid,
+                    "is_affiliation_callback_executed": true,
+                    $and:[
+                        {added_dtm:{$gte: new Date(from)}}, 
+                        {added_dtm:{$lt: new Date(to)}}
+                    ]
+                }
+            },{
+                $count: "sum"
+            }
+        ])
+    }
+
     async getSubscription (subscription_id)  {
         let result = await Subscription.findOne({_id: subscription_id});
         return result;
