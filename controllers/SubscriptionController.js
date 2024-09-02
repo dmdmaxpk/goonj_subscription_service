@@ -1430,8 +1430,6 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	console.log(mid, yesterday, today);
 
 	let subscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, today);
-	let yesterdaySubscriptions = await subscriptionRepo.getAffiliateSubscriptions(mid, yesterday, today);
-
 	let callbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, today);
 	let yesterdayCallbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, yesterday, today);
 	const response = {
@@ -1440,11 +1438,6 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 			Today: callbackCount && callbackCount[0] ? callbackCount[0].sum : 0
 		},
 		Subscriptions: {
-			Yesterday: {
-				Expired: getCountById(yesterdaySubscriptions, "expired"),
-				Billed: getCountById(yesterdaySubscriptions, "billed"),
-				Trial: getCountById(yesterdaySubscriptions, "trial")
-			},
 			Today: {
 				Expired: getCountById(subscriptions, "expired"),
 				Billed: getCountById(subscriptions, "billed"),
