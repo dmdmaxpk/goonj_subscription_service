@@ -1449,7 +1449,7 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 }
 
 function getCountById(array, id) {
-	const subscription = Subscriptions.find(sub => sub._id === id);
+	const subscription = array.find(sub => sub._id === id);
 	return subscription ? subscription.count : null; // Return count or null if not found
   }
 
