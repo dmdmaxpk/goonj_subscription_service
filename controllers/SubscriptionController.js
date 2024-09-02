@@ -1423,7 +1423,7 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	let today = new Date();
 	today.setHours(0, 0, 0, 0);
 
-	let yesterday = today;
+	let yesterday = new Date(today);
 	yesterday = yesterday.setDate(yesterday.getDate() - 1);
 	
 	console.log(mid, yesterday, today);
@@ -1434,15 +1434,24 @@ exports.count_affiliate_subscriptions = async(req, res) => {
 	let yesterdayCallbackCount = await subscriptionRepo.getAffiliateCallbackCount(mid, yesterday, today);
 	const response = {
 		CallbackCount: {
-			yesterday: yesterdayCallbackCount,
-			today: callbackCount
+			yesterday: yesterdayCallbackCount && yesterdayCallbackCount[0] ? yesterdayCallbackCount[0].sum : 0,
+			today: callbackCount && callbackCount[0] ? callbackCount[0].sum : 0
 		},
-		Subscriptions: subscriptions
+		Subscriptions: {
+			Expired: getCountById(subscriptions, "expired"),
+			Billed: getCountById(subscriptions, "billed"),
+			Trial: getCountById(subscriptions, "trial")
+		}
 	}
 
 	console.log(response);
 	res.status(200).send(response);
 }
+
+function getCountById(array, id) {
+	const subscription = Subscriptions.find(sub => sub._id === id);
+	return subscription ? subscription.count : null; // Return count or null if not found
+  }
 
 exports.report = async(req, res) => {
 	await subscriptionService.freeStream();
